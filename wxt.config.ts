@@ -12,7 +12,10 @@ export default defineConfig({
     name: 'Keenetic Toolkit',
     description:
       'Manage Keenetic router connection policies and static routes without opening the web UI.',
-    permissions: ['storage'],
+    // declarativeNetRequestWithHostAccess only affects hosts the user has
+    // already granted, so it adds no scary install warning; it is needed to
+    // strip the Origin header (the router 403s foreign origins, CSRF guard).
+    permissions: ['storage', 'declarativeNetRequestWithHostAccess'],
     // Router access is requested at runtime for its origin only — broad
     // host_permissions would slow down Chrome Web Store review.
     optional_host_permissions: ['http://*/*', 'https://*/*'],
