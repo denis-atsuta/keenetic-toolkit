@@ -1,0 +1,37 @@
+.connect {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 20px 16px;
+  width: 360px;
+}
+
+.connect__title {
+  margin: 0 0 2px;
+  font-size: 17px;
+  font-weight: 500;
+}
+
+.account {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 20px 16px;
+}
+
+.account__details {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 6px 14px;
+  margin: 0;
+  font-size: 13px;
+}
+
+.account__details dt {
+  color: var(--text-muted);
+}
+
+.account__details dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}

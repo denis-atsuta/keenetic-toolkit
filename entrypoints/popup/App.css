@@ -1,141 +1,46 @@
-.panel {
+/* Compact single-column popup; the grid stays one column at this width. */
+.shell {
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  padding: 16px;
-  width: 320px;
+  width: 400px;
+  height: 600px;
 }
 
-.panel h1 {
-  font-size: 1.2em;
-  margin: 0;
+/* Standalone window: fill the viewport so the user can resize freely and
+   the device grid reflows into more columns. */
+.shell--window {
+  width: 100vw;
+  height: 100vh;
 }
 
-.panel label {
+.shell__body {
+  flex: 1;
   display: flex;
-  flex-direction: column;
-  gap: 4px;
-  font-size: 0.85em;
-  text-align: left;
+  min-height: 0;
 }
 
-.panel input {
-  font: inherit;
-  padding: 6px 8px;
-  border-radius: 6px;
-  border: 1px solid #8884;
-  background: transparent;
-  color: inherit;
-}
-
-.error {
-  color: #e5484d;
-  margin: 0;
-  font-size: 0.85em;
-}
-
-.status-ok {
-  color: #30a46c;
-  margin: 0;
-  font-weight: 500;
-}
-
-.hint {
-  margin: 0;
-  font-size: 0.75em;
-  opacity: 0.7;
-}
-
-.topbar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.icon-button {
-  background: none;
-  border: none;
-  padding: 2px 6px;
-  font-size: 1.1em;
-  cursor: pointer;
-}
-
-.host-list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  max-height: 420px;
-  overflow-y: auto;
-}
-
-.host-row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 6px 4px;
-  border-radius: 6px;
-}
-
-.host-row:hover {
-  background: #8881;
-}
-
-.presence {
-  flex: none;
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: #8886;
-}
-
-.presence-on {
-  background: #30a46c;
-}
-
-.host-info {
+.shell__content {
   flex: 1;
   min-width: 0;
   display: flex;
   flex-direction: column;
+  overflow-y: auto;
 }
 
-.host-name {
-  font-size: 0.9em;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+/* Shared screen message (loading / empty / error), centered padding. */
+.screen-msg {
+  margin: 0;
+  padding: 20px 16px;
 }
 
-.host-ip {
-  font-size: 0.75em;
-  opacity: 0.6;
+.error {
+  color: var(--danger);
+  margin: 0;
+  font-size: 13px;
 }
 
-.host-row select {
-  flex: none;
-  max-width: 130px;
-  font: inherit;
-  font-size: 0.85em;
-  padding: 3px 4px;
-  border-radius: 6px;
-  border: 1px solid #8884;
-  background: transparent;
-  color: inherit;
-}
-
-/* The dropdown list does not inherit the select's transparent background:
-   without explicit colors Chrome renders white-on-white in dark mode. */
-.host-row select option {
-  background: #ffffff;
-  color: #213547;
-}
-
-@media (prefers-color-scheme: dark) {
-  .host-row select option {
-    background: #2a2a2a;
-    color: rgba(255, 255, 255, 0.87);
-  }
+.hint {
+  margin: 0;
+  font-size: 12px;
+  color: var(--text-muted);
 }

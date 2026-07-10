@@ -1,0 +1,42 @@
+/*
+ * Keenetic design tokens, sampled from the KeeneticOS 5.1 web configurator.
+ * Dark is the brand's canonical look; a light variant follows the OS UI's
+ * own light theme so the popup is not broken when Chrome is in light mode.
+ */
+:root {
+  --font: 'Roboto', 'Segoe UI', system-ui, -apple-system, sans-serif;
+  --radius: 8px;
+  --radius-sm: 4px;
+
+  --bg: #1b2434;
+  --bg-bar: #161c27;
+  --surface: #1b2434;
+  --surface-hover: #2e3d57;
+  --border: #4d545f;
+  --border-soft: #2e3948;
+  --text: #c2c2c2;
+  --text-muted: #7c8697;
+  --accent: #0097dc;
+  --accent-hover: #33abe4;
+  --on-accent: #ffffff;
+  --success: #25c478;
+  --danger: #ff6d54;
+}
+
+@media (prefers-color-scheme: light) {
+  :root {
+    --bg: #eef1f5;
+    --bg-bar: #ffffff;
+    --surface: #ffffff;
+    --surface-hover: #e8f4fb;
+    --border: #d4d9e0;
+    --border-soft: #e2e6ec;
+    --text: #2b3444;
+    --text-muted: #7c8697;
+    --accent: #0097dc;
+    --accent-hover: #007cb8;
+    --on-accent: #ffffff;
+    --success: #1fa968;
+    --danger: #e5482d;
+  }
+}

@@ -1,119 +1,108 @@
 import { useEffect, useState } from 'react';
-import { connectRouter } from '@/utils/keenetic/setup';
-import { KeeneticAuthError } from '@/utils/keenetic/client';
+import { Header } from '@/components/layout/Header';
+import { Rail, type RailItem } from '@/components/layout/Rail';
+import { DevicesScreen } from '@/features/devices/DevicesScreen';
+import { ConnectScreen } from '@/features/connection/ConnectScreen';
+import { AccountScreen } from '@/features/connection/AccountScreen';
+import { ComingSoon } from '@/features/placeholder/ComingSoon';
 import { ensureOriginStripRule } from '@/utils/keenetic/origin-fix';
-import { HostList } from './HostList';
 import { routerSettings, type RouterSettings } from '@/utils/settings';
 import './App.css';
 
-type View = { kind: 'loading' } | { kind: 'setup' } | { kind: 'connected'; settings: RouterSettings };
+type SectionId = 'devices' | 'routes' | 'dns' | 'settings' | 'account';
+
+const NAV_ITEMS: RailItem[] = [
+  { id: 'devices', icon: 'devices', label: 'Devices' },
+  { id: 'routes', icon: 'routes', label: 'Routes' },
+  { id: 'dns', icon: 'dns', label: 'DNS' },
+  { id: 'settings', icon: 'settings', label: 'Settings' },
+];
+const BOTTOM_ITEMS: RailItem[] = [{ id: 'account', icon: 'logout', label: 'Account' }];
+
+const SECTION_TITLES: Record<SectionId, string> = {
+  devices: 'Devices',
+  routes: 'Routes',
+  dns: 'DNS',
+  settings: 'Settings',
+  account: 'Account',
+};
+
+/** True when running as the standalone resizable window, not the toolbar popup. */
+const IS_WINDOW = new URLSearchParams(window.location.search).has('window');
+
+function openInWindow() {
+  void browser.windows
+    .create({
+      url: browser.runtime.getURL('/popup.html?window'),
+      type: 'popup',
+      width: 820,
+      height: 640,
+    })
+    .then(() => window.close());
+}
+
+type Screen =
+  | { kind: 'loading' }
+  | { kind: 'connect' }
+  | { kind: 'shell'; settings: RouterSettings };
 
 function App() {
-  const [view, setView] = useState<View>({ kind: 'loading' });
+  const [screen, setScreen] = useState<Screen>({ kind: 'loading' });
 
   useEffect(() => {
     routerSettings.getValue().then((settings) => {
-      // Belt and braces: the background script also registers this on start.
       if (settings) void ensureOriginStripRule(settings.origin);
-      setView(settings ? { kind: 'connected', settings } : { kind: 'setup' });
+      setScreen(settings ? { kind: 'shell', settings } : { kind: 'connect' });
     });
   }, []);
 
-  switch (view.kind) {
+  switch (screen.kind) {
     case 'loading':
       return null;
-    case 'setup':
-      return <SetupForm onConnected={(settings) => setView({ kind: 'connected', settings })} />;
-    case 'connected':
+    case 'connect':
       return (
-        <ConnectedView settings={view.settings} onReconfigure={() => setView({ kind: 'setup' })} />
+        <ConnectScreen onConnected={(settings) => setScreen({ kind: 'shell', settings })} />
+      );
+    case 'shell':
+      return (
+        <Shell settings={screen.settings} onLoggedOut={() => setScreen({ kind: 'connect' })} />
       );
   }
 }
 
-function SetupForm({ onConnected }: { onConnected: (settings: RouterSettings) => void }) {
-  const [address, setAddress] = useState('my.keenetic.net');
-  const [login, setLogin] = useState('admin');
-  const [password, setPassword] = useState('');
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  async function handleSubmit() {
-    setBusy(true);
-    setError(null);
-    try {
-      onConnected(await connectRouter(address, login, password));
-    } catch (e) {
-      setError(
-        e instanceof KeeneticAuthError
-          ? 'The router rejected the login or password.'
-          : e instanceof Error
-            ? e.message
-            : String(e),
-      );
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  return (
-    <form
-      className="panel"
-      onSubmit={(e) => {
-        e.preventDefault();
-        void handleSubmit();
-      }}
-    >
-      <h1>Connect to router</h1>
-      <label>
-        Router address
-        <input
-          value={address}
-          onChange={(e) => setAddress(e.target.value)}
-          placeholder="my.keenetic.net or 192.168.1.1"
-          required
-        />
-      </label>
-      <label>
-        Login
-        <input value={login} onChange={(e) => setLogin(e.target.value)} required />
-      </label>
-      <label>
-        Password
-        <input
-          type="password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          required
-        />
-      </label>
-      {error && <p className="error">{error}</p>}
-      <button type="submit" disabled={busy}>
-        {busy ? 'Connecting…' : 'Connect'}
-      </button>
-      <p className="hint">
-        Only a derived hash of the password is stored; all requests go directly to the router.
-      </p>
-    </form>
-  );
-}
-
-function ConnectedView({
+function Shell({
   settings,
-  onReconfigure,
+  onLoggedOut,
 }: {
   settings: RouterSettings;
-  onReconfigure: () => void;
+  onLoggedOut: () => void;
 }) {
+  const [section, setSection] = useState<SectionId>('devices');
+
   return (
-    <div className="panel">
-      <header className="topbar">
-        <h1>{settings.realm}</h1>
-        <button className="icon-button" title="Change connection" onClick={onReconfigure}>
-          ⚙
-        </button>
-      </header>
-      <HostList settings={settings} />
+    <div className={`shell ${IS_WINDOW ? 'shell--window' : ''}`}>
+      <Header
+        title={settings.realm}
+        subtitle={SECTION_TITLES[section]}
+        onExpand={IS_WINDOW ? undefined : openInWindow}
+      />
+      <div className="shell__body">
+        <Rail
+          items={NAV_ITEMS}
+          bottomItems={BOTTOM_ITEMS}
+          active={section}
+          onSelect={(id) => setSection(id as SectionId)}
+        />
+        <main className="shell__content">
+          {section === 'devices' && <DevicesScreen settings={settings} />}
+          {section === 'routes' && <ComingSoon title="Routes" />}
+          {section === 'dns' && <ComingSoon title="DNS" />}
+          {section === 'settings' && <ComingSoon title="Settings" />}
+          {section === 'account' && (
+            <AccountScreen settings={settings} onLoggedOut={onLoggedOut} />
+          )}
+        </main>
+      </div>
     </div>
   );
 }

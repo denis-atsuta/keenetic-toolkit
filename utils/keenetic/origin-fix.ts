@@ -27,3 +27,8 @@ export async function ensureOriginStripRule(origin: string): Promise<void> {
     ],
   });
 }
+
+/** Drops the Origin-strip rule, e.g. on logout. */
+export async function clearOriginStripRule(): Promise<void> {
+  await browser.declarativeNetRequest.updateSessionRules({ removeRuleIds: [RULE_ID] });
+}

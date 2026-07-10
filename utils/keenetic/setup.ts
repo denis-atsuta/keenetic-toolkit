@@ -1,6 +1,6 @@
 import { computeHa1 } from './crypto';
 import { fetchAuthChallenge, KeeneticClient } from './client';
-import { ensureOriginStripRule } from './origin-fix';
+import { clearOriginStripRule, ensureOriginStripRule } from './origin-fix';
 import { normalizeOrigin, routerSettings, type RouterSettings } from '../settings';
 
 /**
@@ -38,4 +38,20 @@ export async function connectRouter(
   const settings: RouterSettings = { origin, login, ha1, realm: auth.realm };
   await routerSettings.setValue(settings);
   return settings;
+}
+
+/**
+ * Removes the stored credentials and the router-specific runtime state
+ * (DNR rule, host permission), returning the extension to its initial state.
+ */
+export async function disconnectRouter(origin: string): Promise<void> {
+  await routerSettings.setValue(null);
+  await clearOriginStripRule();
+  // End the router session so its cookie does not linger in the browser.
+  try {
+    await fetch(`${origin}/auth`, { method: 'DELETE', credentials: 'include' });
+  } catch {
+    // The router may be unreachable at logout time; ignore.
+  }
+  await browser.permissions.remove({ origins: [`${origin}/*`] });
 }

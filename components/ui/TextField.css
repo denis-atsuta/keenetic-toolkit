@@ -1,0 +1,36 @@
+.field {
+  position: relative;
+}
+
+.field input {
+  width: 100%;
+  font: inherit;
+  font-size: 14px;
+  height: 40px;
+  padding: 0 12px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text);
+}
+
+.field input:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.field__label {
+  position: absolute;
+  top: -7px;
+  left: 10px;
+  padding: 0 4px;
+  font-size: 12px;
+  line-height: 1;
+  color: var(--text-muted);
+  background: var(--bg);
+  pointer-events: none;
+}
+
+.field input:focus + .field__label {
+  color: var(--accent);
+}
