@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { connectRouter } from '@/utils/keenetic/setup';
 import { KeeneticAuthError } from '@/utils/keenetic/client';
 import { ensureOriginStripRule } from '@/utils/keenetic/origin-fix';
+import { HostList } from './HostList';
 import { routerSettings, type RouterSettings } from '@/utils/settings';
 import './App.css';
 
@@ -106,15 +107,13 @@ function ConnectedView({
 }) {
   return (
     <div className="panel">
-      <h1>{settings.realm}</h1>
-      <p className="status-ok">Connected</p>
-      <dl className="details">
-        <dt>Address</dt>
-        <dd>{settings.origin}</dd>
-        <dt>Login</dt>
-        <dd>{settings.login}</dd>
-      </dl>
-      <button onClick={onReconfigure}>Change connection…</button>
+      <header className="topbar">
+        <h1>{settings.realm}</h1>
+        <button className="icon-button" title="Change connection" onClick={onReconfigure}>
+          ⚙
+        </button>
+      </header>
+      <HostList settings={settings} />
     </div>
   );
 }

@@ -24,6 +24,17 @@ export interface AuthChallenge {
   challenge: string;
 }
 
+/** Recursively collects `{"status": "error", "message": ...}` entries. */
+export function collectRciErrors(value: unknown): string[] {
+  if (Array.isArray(value)) return value.flatMap(collectRciErrors);
+  if (value === null || typeof value !== 'object') return [];
+  const record = value as Record<string, unknown>;
+  if (record.status === 'error') {
+    return [typeof record.message === 'string' ? record.message : 'RCI operation failed'];
+  }
+  return Object.values(record).flatMap(collectRciErrors);
+}
+
 /**
  * Probes `origin` for a Keenetic router.
  *
@@ -79,6 +90,21 @@ export class KeeneticClient {
     if (!res.ok) {
       throw new KeeneticApiError(`Auth handshake failed: ${res.status}`, res.status);
     }
+  }
+
+  /**
+   * Executes several RCI operations in order via POST /rci/ — used to pair
+   * a config change with `system configuration save` in one round-trip.
+   *
+   * Failed operations still answer HTTP 200 with error entries buried in
+   * the body (e.g. `host "..." is unregistered`), so the response is
+   * scanned and the first error is thrown.
+   */
+  async rciBatch(operations: unknown[]): Promise<unknown[]> {
+    const result = await this.rci<unknown[]>('/', operations);
+    const errors = collectRciErrors(result);
+    if (errors.length > 0) throw new KeeneticApiError(errors[0]);
+    return result;
   }
 
   /** GET /rci/<path> (or POST when `body` is given), re-authenticating on 401. */
