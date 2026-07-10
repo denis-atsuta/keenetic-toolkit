@@ -1,0 +1,144 @@
+import { useState } from 'react';
+import { Select, type SelectOption } from '@/components/ui/Select';
+import { Toggle } from '@/components/ui/Toggle';
+import { Button } from '@/components/ui/Button';
+import { TextField } from '@/components/ui/TextField';
+import { Icon } from '@/components/ui/Icon';
+import { HelpTip } from '@/components/ui/HelpTip';
+import {
+  parseAddresses,
+  type AddressList,
+  type ListDetailEdit,
+  type NetInterface,
+} from '@/utils/keenetic/routing';
+
+interface ListDetailProps {
+  list: AddressList;
+  interfaces: NetInterface[];
+  busy: boolean;
+  /** True when creating a new list rather than editing an existing one. */
+  isNew?: boolean;
+  onBack: () => void;
+  onSave: (original: AddressList, edit: ListDetailEdit) => Promise<void>;
+  onDelete: (listId: string) => Promise<void>;
+}
+
+export function ListDetail({
+  list,
+  interfaces,
+  busy,
+  isNew,
+  onBack,
+  onSave,
+  onDelete,
+}: ListDetailProps) {
+  const rule = list.rule;
+  const [name, setName] = useState(list.name);
+  const [addressesText, setAddressesText] = useState(list.addresses.join('\n'));
+  const [routed, setRouted] = useState(rule?.enabled ?? false);
+  const [interfaceId, setInterfaceId] = useState(rule?.interfaceId ?? interfaces[0]?.id ?? '');
+  const [auto, setAuto] = useState(rule?.auto ?? true);
+  const [exclusive, setExclusive] = useState(rule?.exclusive ?? false);
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
+
+  const options: SelectOption[] = interfaces.map((i) => ({ value: i.id, label: i.name }));
+  const addresses = parseAddresses(addressesText);
+
+  async function save() {
+    await onSave(list, { name, addresses, routed, interfaceId, auto, exclusive });
+    onBack();
+  }
+
+  async function del() {
+    if (!confirmingDelete) {
+      setConfirmingDelete(true);
+      return;
+    }
+    await onDelete(list.id);
+    onBack();
+  }
+
+  return (
+    <div className="list-detail">
+      <header className="list-detail__head">
+        <button className="icon-button" title="Back" onClick={onBack}>
+          <Icon name="routes" size={16} />
+          <span>Back</span>
+        </button>
+        {!isNew && (
+          <button
+            className={`detail-delete ${confirmingDelete ? 'detail-delete--confirm' : ''}`}
+            title="Delete list"
+            onClick={() => void del()}
+            disabled={busy}
+          >
+            <Icon name="trash" size={16} />
+            {confirmingDelete && <span>Delete?</span>}
+          </button>
+        )}
+      </header>
+
+      <TextField label="List name" value={name} onChange={setName} autoFocus={isNew} />
+
+      <div className="list-detail__addresses">
+        <div className="list-section__head">
+          <h3 className="list-section__title">Addresses</h3>
+          <span className="list-section__count">{addresses.length}</span>
+        </div>
+        <textarea
+          className="address-input"
+          value={addressesText}
+          spellCheck={false}
+          placeholder="One domain or IP/CIDR per line"
+          onChange={(e) => setAddressesText(e.target.value)}
+        />
+      </div>
+
+      <section className="list-section list-detail__routing">
+        <div className="list-section__head">
+          <h3 className="list-section__title">Routing</h3>
+          <Toggle checked={routed} onChange={setRouted} ariaLabel="Route this list" />
+        </div>
+        {routed && (
+          <>
+            <label className="field-row">
+              <span className="field-row__label">Interface</span>
+              <Select
+                value={interfaceId}
+                options={options}
+                ariaLabel="Interface"
+                onChange={setInterfaceId}
+              />
+            </label>
+            <div className="field-row field-row--inline">
+              <span className="field-row__label">
+                Auto-add
+                <HelpTip>Apply the route only while the selected interface is up.</HelpTip>
+              </span>
+              <Toggle checked={auto} onChange={setAuto} ariaLabel="Auto-add" />
+            </div>
+            <div className="field-row field-row--inline">
+              <span className="field-row__label">
+                Exclusive
+                <HelpTip>
+                  Route this traffic only through the selected interface; if it is down, the traffic
+                  is not routed at all.
+                </HelpTip>
+              </span>
+              <Toggle checked={exclusive} onChange={setExclusive} ariaLabel="Exclusive route" />
+            </div>
+          </>
+        )}
+      </section>
+
+      <div className="list-detail__actions">
+        <Button onClick={() => void save()} disabled={busy || (isNew && !name.trim())}>
+          {busy ? 'Saving…' : isNew ? 'Create' : 'Save'}
+        </Button>
+        <Button variant="outline" onClick={onBack} disabled={busy}>
+          Cancel
+        </Button>
+      </div>
+    </div>
+  );
+}

@@ -2,7 +2,7 @@ import type { ButtonHTMLAttributes } from 'react';
 import './Button.css';
 
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: 'primary' | 'outline';
+  variant?: 'primary' | 'outline' | 'danger';
 }
 
 export function Button({ variant = 'primary', className, ...rest }: ButtonProps) {

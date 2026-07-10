@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Header } from '@/components/layout/Header';
 import { Rail, type RailItem } from '@/components/layout/Rail';
 import { DevicesScreen } from '@/features/devices/DevicesScreen';
+import { RoutingScreen } from '@/features/routing/RoutingScreen';
 import { ConnectScreen } from '@/features/connection/ConnectScreen';
 import { AccountScreen } from '@/features/connection/AccountScreen';
 import { ComingSoon } from '@/features/placeholder/ComingSoon';
@@ -9,20 +10,18 @@ import { ensureOriginStripRule } from '@/utils/keenetic/origin-fix';
 import { loadConnection, type RouterProfile, type RouterSettings } from '@/utils/settings';
 import './App.css';
 
-type SectionId = 'devices' | 'routes' | 'dns' | 'settings' | 'account';
+type SectionId = 'devices' | 'routing' | 'settings' | 'account';
 
 const NAV_ITEMS: RailItem[] = [
   { id: 'devices', icon: 'devices', label: 'Devices' },
-  { id: 'routes', icon: 'routes', label: 'Routes' },
-  { id: 'dns', icon: 'dns', label: 'DNS' },
+  { id: 'routing', icon: 'routes', label: 'Routing' },
   { id: 'settings', icon: 'settings', label: 'Settings' },
 ];
 const BOTTOM_ITEMS: RailItem[] = [{ id: 'account', icon: 'logout', label: 'Account' }];
 
 const SECTION_TITLES: Record<SectionId, string> = {
   devices: 'Devices',
-  routes: 'Routes',
-  dns: 'DNS',
+  routing: 'Routing',
   settings: 'Settings',
   account: 'Account',
 };
@@ -109,8 +108,7 @@ function Shell({
         />
         <main className="shell__content">
           {section === 'devices' && <DevicesScreen settings={settings} />}
-          {section === 'routes' && <ComingSoon title="Routes" />}
-          {section === 'dns' && <ComingSoon title="DNS" />}
+          {section === 'routing' && <RoutingScreen settings={settings} />}
           {section === 'settings' && <ComingSoon title="Settings" />}
           {section === 'account' && (
             <AccountScreen settings={settings} onLoggedOut={onLoggedOut} />

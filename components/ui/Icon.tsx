@@ -9,7 +9,8 @@ export type IconName =
   | 'search'
   | 'star'
   | 'star-filled'
-  | 'expand';
+  | 'expand'
+  | 'trash';
 
 /** Stroke-based 24×24 icons (Lucide-style), tinted via currentColor. */
 const PATHS: Record<IconName, ReactNode> = {
@@ -60,6 +61,9 @@ const PATHS: Record<IconName, ReactNode> = {
   ),
   expand: (
     <path d="M15 3h6v6M10 14 21 3M21 14v5a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5" />
+  ),
+  trash: (
+    <path d="M3 6h18M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2m2 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6M10 11v6M14 11v6" />
   ),
 };
 
