@@ -12,6 +12,12 @@
   font-weight: 500;
 }
 
+.connect__remember {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
 .account {
   display: flex;
   flex-direction: column;

@@ -6,7 +6,7 @@ import { ConnectScreen } from '@/features/connection/ConnectScreen';
 import { AccountScreen } from '@/features/connection/AccountScreen';
 import { ComingSoon } from '@/features/placeholder/ComingSoon';
 import { ensureOriginStripRule } from '@/utils/keenetic/origin-fix';
-import { routerSettings, type RouterSettings } from '@/utils/settings';
+import { loadConnection, type RouterProfile, type RouterSettings } from '@/utils/settings';
 import './App.css';
 
 type SectionId = 'devices' | 'routes' | 'dns' | 'settings' | 'account';
@@ -43,16 +43,26 @@ function openInWindow() {
 
 type Screen =
   | { kind: 'loading' }
-  | { kind: 'connect' }
+  | { kind: 'connect'; locked?: RouterProfile }
   | { kind: 'shell'; settings: RouterSettings };
 
 function App() {
   const [screen, setScreen] = useState<Screen>({ kind: 'loading' });
 
   useEffect(() => {
-    routerSettings.getValue().then((settings) => {
-      if (settings) void ensureOriginStripRule(settings.origin);
-      setScreen(settings ? { kind: 'shell', settings } : { kind: 'connect' });
+    loadConnection().then((state) => {
+      switch (state.status) {
+        case 'connected':
+          void ensureOriginStripRule(state.settings.origin);
+          setScreen({ kind: 'shell', settings: state.settings });
+          break;
+        case 'locked':
+          void ensureOriginStripRule(state.profile.origin);
+          setScreen({ kind: 'connect', locked: state.profile });
+          break;
+        case 'none':
+          setScreen({ kind: 'connect' });
+      }
     });
   }, []);
 
@@ -61,7 +71,11 @@ function App() {
       return null;
     case 'connect':
       return (
-        <ConnectScreen onConnected={(settings) => setScreen({ kind: 'shell', settings })} />
+        <ConnectScreen
+          initial={screen.locked && { address: screen.locked.origin, login: screen.locked.login }}
+          locked={Boolean(screen.locked)}
+          onConnected={(settings) => setScreen({ kind: 'shell', settings })}
+        />
       );
     case 'shell':
       return (

@@ -1,11 +1,13 @@
 import { computeHa1 } from './crypto';
 import { fetchAuthChallenge, KeeneticClient } from './client';
 import { clearOriginStripRule, ensureOriginStripRule } from './origin-fix';
-import { normalizeOrigin, routerSettings, type RouterSettings } from '../settings';
+import { clearConnection, normalizeOrigin, saveConnection, type RouterSettings } from '../settings';
 
 /**
  * Full first-time connection flow: request host permission, probe the router,
- * derive ha1 and verify the credentials, then persist the settings.
+ * derive ha1 and verify the credentials, then persist the connection.
+ *
+ * `remember` mirrors ha1 to disk; otherwise it stays in memory only.
  *
  * Must be called from a user gesture (button click): permissions.request()
  * is rejected outside one, which is why it runs before any fetch.
@@ -14,6 +16,7 @@ export async function connectRouter(
   addressInput: string,
   login: string,
   password: string,
+  remember: boolean,
 ): Promise<RouterSettings> {
   const origin = normalizeOrigin(addressInput);
 
@@ -36,7 +39,7 @@ export async function connectRouter(
   await client.authenticate();
 
   const settings: RouterSettings = { origin, login, ha1, realm: auth.realm };
-  await routerSettings.setValue(settings);
+  await saveConnection(settings, remember);
   return settings;
 }
 
@@ -45,7 +48,7 @@ export async function connectRouter(
  * (DNR rule, host permission), returning the extension to its initial state.
  */
 export async function disconnectRouter(origin: string): Promise<void> {
-  await routerSettings.setValue(null);
+  await clearConnection();
   await clearOriginStripRule();
   // End the router session so its cookie does not linger in the browser.
   try {
