@@ -15,7 +15,10 @@ export default defineConfig({
     // declarativeNetRequestWithHostAccess only affects hosts the user has
     // already granted, so it adds no scary install warning; it is needed to
     // strip the Origin header (the router 403s foreign origins, CSRF guard).
-    permissions: ['storage', 'declarativeNetRequestWithHostAccess'],
+    // scripting + activeTab power the page-scan feature: the user opening the
+    // popup grants temporary access to the active tab only — no broad host
+    // access and no extra install warning.
+    permissions: ['storage', 'declarativeNetRequestWithHostAccess', 'scripting', 'activeTab'],
     // Router access is requested at runtime for its origin only — broad
     // host_permissions would slow down Chrome Web Store review.
     optional_host_permissions: ['http://*/*', 'https://*/*'],

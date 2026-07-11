@@ -4,14 +4,20 @@ import './Checkbox.css';
 interface CheckboxProps {
   checked: boolean;
   onChange: (checked: boolean) => void;
+  disabled?: boolean;
   children: ReactNode;
 }
 
 /** Keenetic-style checkbox: a square that fills with the accent when checked. */
-export function Checkbox({ checked, onChange, children }: CheckboxProps) {
+export function Checkbox({ checked, onChange, disabled, children }: CheckboxProps) {
   return (
-    <label className="checkbox">
-      <input type="checkbox" checked={checked} onChange={(e) => onChange(e.target.checked)} />
+    <label className={`checkbox ${disabled ? 'checkbox--disabled' : ''}`}>
+      <input
+        type="checkbox"
+        checked={checked}
+        disabled={disabled}
+        onChange={(e) => onChange(e.target.checked)}
+      />
       <span className="checkbox__box" aria-hidden="true">
         <svg width="12" height="12" viewBox="0 0 12 12">
           <path d="M2.5 6.2l2.3 2.3L9.5 3.5" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />

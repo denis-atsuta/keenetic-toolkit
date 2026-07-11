@@ -20,7 +20,8 @@
     "@radix-ui/react-select": "^2.3.3",
     "@radix-ui/react-tooltip": "^1.2.12",
     "react": "^19.2.4",
-    "react-dom": "^19.2.4"
+    "react-dom": "^19.2.4",
+    "tldts-experimental": "^7.4.8"
   },
   "devDependencies": {
     "@types/react": "^19.2.14",

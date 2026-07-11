@@ -19,6 +19,8 @@ interface ListDetailProps {
   busy: boolean;
   /** True when creating a new list rather than editing an existing one. */
   isNew?: boolean;
+  /** Overrides the initial addresses (page-scan handoff); Save still diffs against `list`. */
+  presetAddresses?: string[];
   onBack: () => void;
   onSave: (original: AddressList, edit: ListDetailEdit) => Promise<void>;
   onDelete: (listId: string) => Promise<void>;
@@ -29,13 +31,16 @@ export function ListDetail({
   interfaces,
   busy,
   isNew,
+  presetAddresses,
   onBack,
   onSave,
   onDelete,
 }: ListDetailProps) {
   const rule = list.rule;
   const [name, setName] = useState(list.name);
-  const [addressesText, setAddressesText] = useState(list.addresses.join('\n'));
+  const [addressesText, setAddressesText] = useState(
+    (presetAddresses ?? list.addresses).join('\n'),
+  );
   const [routed, setRouted] = useState(rule?.enabled ?? false);
   const [interfaceId, setInterfaceId] = useState(rule?.interfaceId ?? interfaces[0]?.id ?? '');
   const [auto, setAuto] = useState(rule?.auto ?? true);

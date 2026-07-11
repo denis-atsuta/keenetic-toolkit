@@ -10,7 +10,8 @@ export type IconName =
   | 'star'
   | 'star-filled'
   | 'expand'
-  | 'trash';
+  | 'trash'
+  | 'scan';
 
 /** Stroke-based 24×24 icons (Lucide-style), tinted via currentColor. */
 const PATHS: Record<IconName, ReactNode> = {
@@ -64,6 +65,13 @@ const PATHS: Record<IconName, ReactNode> = {
   ),
   trash: (
     <path d="M3 6h18M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2m2 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6M10 11v6M14 11v6" />
+  ),
+  scan: (
+    <>
+      <path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2" />
+      <circle cx="11.5" cy="11.5" r="3.5" />
+      <path d="M17 17l-3-3" />
+    </>
   ),
 };
 
