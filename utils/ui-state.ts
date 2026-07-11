@@ -5,7 +5,7 @@
  */
 import type { ScanResult } from '@/utils/scan';
 
-export type SectionId = 'devices' | 'routing' | 'settings' | 'account';
+export type SectionId = 'devices' | 'routing' | 'scan' | 'settings' | 'account';
 
 /** Unsaved list-editor fields, so an accidental popup close loses nothing. */
 export interface ListDraft {
@@ -39,15 +39,23 @@ export interface ScanSelection {
 export interface RoutingUiState {
   openListId: string | null;
   creating: boolean;
-  scan: ScanResult | null;
-  scanSel: ScanSelection | null;
-  handoff: ScanHandoff | null;
   draft: ListDraft | null;
 }
 
 export const EMPTY_ROUTING_UI: RoutingUiState = {
   openListId: null,
   creating: false,
+  draft: null,
+};
+
+export interface ScanUiState {
+  scan: ScanResult | null;
+  scanSel: ScanSelection | null;
+  handoff: ScanHandoff | null;
+  draft: ListDraft | null;
+}
+
+export const EMPTY_SCAN_UI: ScanUiState = {
   scan: null,
   scanSel: null,
   handoff: null,
@@ -60,9 +68,15 @@ const sectionStore = storage.defineItem<SectionId>('session:ui.section', {
 const routingStore = storage.defineItem<RoutingUiState>('session:ui.routing', {
   fallback: EMPTY_ROUTING_UI,
 });
+const scanStore = storage.defineItem<ScanUiState>('session:ui.scan', {
+  fallback: EMPTY_SCAN_UI,
+});
 
 export const loadSection = () => sectionStore.getValue();
 export const saveSection = (section: SectionId) => void sectionStore.setValue(section);
 
 export const loadRoutingUi = () => routingStore.getValue();
 export const saveRoutingUi = (state: RoutingUiState) => void routingStore.setValue(state);
+
+export const loadScanUi = () => scanStore.getValue();
+export const saveScanUi = (state: ScanUiState) => void scanStore.setValue(state);

@@ -27,6 +27,8 @@ interface ListDetailProps {
   /** Reports every edit so it survives an accidental popup close. */
   onDraftChange?: (draft: ListDraft) => void;
   onBack: () => void;
+  /** Called after a successful save instead of onBack (e.g. to reset a flow). */
+  onSaved?: () => void;
   onSave: (original: AddressList, edit: ListDetailEdit) => Promise<void>;
   onDelete: (listId: string) => Promise<void>;
 }
@@ -40,6 +42,7 @@ export function ListDetail({
   draft,
   onDraftChange,
   onBack,
+  onSaved,
   onSave,
   onDelete,
 }: ListDetailProps) {
@@ -68,7 +71,7 @@ export function ListDetail({
 
   async function save() {
     await onSave(list, { name, addresses, routed, interfaceId, auto, exclusive });
-    onBack();
+    (onSaved ?? onBack)();
   }
 
   async function del() {

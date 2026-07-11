@@ -1,19 +1,22 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Header } from '@/components/layout/Header';
 import { Rail, type RailItem } from '@/components/layout/Rail';
 import { DevicesScreen } from '@/features/devices/DevicesScreen';
 import { RoutingScreen } from '@/features/routing/RoutingScreen';
+import { ScanScreen } from '@/features/scan/ScanScreen';
 import { ConnectScreen } from '@/features/connection/ConnectScreen';
 import { AccountScreen } from '@/features/connection/AccountScreen';
 import { SettingsScreen } from '@/features/settings/SettingsScreen';
 import { ensureOriginStripRule } from '@/utils/keenetic/origin-fix';
 import { loadConnection, type RouterProfile, type RouterSettings } from '@/utils/settings';
+import { dispatchBack } from '@/utils/nav';
 import { loadSection, saveSection, type SectionId } from '@/utils/ui-state';
 import './App.css';
 
 const NAV_ITEMS: RailItem[] = [
   { id: 'devices', icon: 'devices', label: 'Devices' },
   { id: 'routing', icon: 'routes', label: 'Routing' },
+  { id: 'scan', icon: 'scan', label: 'Scan' },
 ];
 const BOTTOM_ITEMS: RailItem[] = [
   { id: 'settings', icon: 'settings', label: 'Settings' },
@@ -23,6 +26,7 @@ const BOTTOM_ITEMS: RailItem[] = [
 const SECTION_TITLES: Record<SectionId, string> = {
   devices: 'Devices',
   routing: 'Routing',
+  scan: 'Scan page',
   settings: 'Settings',
   account: 'Account',
 };
@@ -100,6 +104,45 @@ function Shell({
   onLoggedOut: () => void;
 }) {
   const [section, setSection] = useState<SectionId>(initialSection);
+  // Section history for the mouse side buttons (back/forward).
+  const past = useRef<SectionId[]>([]);
+  const future = useRef<SectionId[]>([]);
+  const current = useRef(section);
+
+  function show(next: SectionId) {
+    current.current = next;
+    setSection(next);
+    saveSection(next);
+  }
+
+  function select(next: SectionId) {
+    if (next === current.current) return;
+    past.current.push(current.current);
+    future.current = [];
+    show(next);
+  }
+
+  useEffect(() => {
+    const onMouseUp = (e: MouseEvent) => {
+      // 3 / 4 = the mouse back / forward side buttons.
+      if (e.button === 3) {
+        e.preventDefault();
+        // An open inner screen (editor, scan picker) consumes back first.
+        if (!dispatchBack() && past.current.length > 0) {
+          future.current.push(current.current);
+          show(past.current.pop()!);
+        }
+      } else if (e.button === 4) {
+        e.preventDefault();
+        if (future.current.length > 0) {
+          past.current.push(current.current);
+          show(future.current.pop()!);
+        }
+      }
+    };
+    window.addEventListener('mouseup', onMouseUp);
+    return () => window.removeEventListener('mouseup', onMouseUp);
+  }, []);
 
   return (
     <div className={`shell ${IS_WINDOW ? 'shell--window' : ''}`}>
@@ -113,14 +156,12 @@ function Shell({
           items={NAV_ITEMS}
           bottomItems={BOTTOM_ITEMS}
           active={section}
-          onSelect={(id) => {
-            setSection(id as SectionId);
-            saveSection(id as SectionId);
-          }}
+          onSelect={(id) => select(id as SectionId)}
         />
         <main className="shell__content">
           {section === 'devices' && <DevicesScreen settings={settings} />}
           {section === 'routing' && <RoutingScreen settings={settings} />}
+          {section === 'scan' && <ScanScreen settings={settings} />}
           {section === 'settings' && <SettingsScreen settings={settings} />}
           {section === 'account' && (
             <AccountScreen settings={settings} onLoggedOut={onLoggedOut} />
