@@ -5,12 +5,17 @@ import { Select, type SelectOption } from '@/components/ui/Select';
 import { Icon } from '@/components/ui/Icon';
 import type { AddressList } from '@/utils/keenetic/routing';
 import { groupHosts, type ScanResult } from '@/utils/scan';
+import type { ScanSelection } from '@/utils/ui-state';
 
 const NEW_LIST_VALUE = '__new__';
 
 interface ScanPickerProps {
   result: ScanResult;
   lists: AddressList[];
+  /** Checkbox state restored after a popup reopen. */
+  initialSelection?: ScanSelection | null;
+  /** Reports every selection change so it survives an accidental popup close. */
+  onSelectionChange?: (selection: ScanSelection) => void;
   onBack: () => void;
   /** Re-reads the page's resource buffer and merges new hosts into `result`. */
   onRescan: () => Promise<void>;
@@ -23,15 +28,29 @@ interface ScanPickerProps {
  * just the eTLD+1 (Keenetic covers subdomains); unchecking it lets the user
  * pick specific subdomains.
  */
-export function ScanPicker({ result, lists, onBack, onRescan, onContinue }: ScanPickerProps) {
+export function ScanPicker({
+  result,
+  lists,
+  initialSelection,
+  onSelectionChange,
+  onBack,
+  onRescan,
+  onContinue,
+}: ScanPickerProps) {
   const groups = useMemo(() => groupHosts(result.hosts), [result.hosts]);
   const [whole, setWhole] = useState<ReadonlySet<string>>(
-    new Set(groups.map((g) => g.domain)),
+    () => new Set(initialSelection?.whole ?? groups.map((g) => g.domain)),
   );
-  const [checkedHosts, setCheckedHosts] = useState<ReadonlySet<string>>(new Set());
-  const [dest, setDest] = useState(NEW_LIST_VALUE);
+  const [checkedHosts, setCheckedHosts] = useState<ReadonlySet<string>>(
+    () => new Set(initialSelection?.hosts ?? []),
+  );
+  const [dest, setDest] = useState(initialSelection?.dest ?? NEW_LIST_VALUE);
   const [rescanning, setRescanning] = useState(false);
   const [rescanError, setRescanError] = useState<string | null>(null);
+
+  useEffect(() => {
+    onSelectionChange?.({ whole: [...whole], hosts: [...checkedHosts], dest });
+  }, [onSelectionChange, whole, checkedHosts, dest]);
 
   // Domains that appear after a rescan get checked by default, without
   // touching what the user has already (un)checked.
@@ -59,6 +78,8 @@ export function ScanPicker({ result, lists, onBack, onRescan, onContinue }: Scan
     { value: NEW_LIST_VALUE, label: 'New list' },
     ...lists.map((l) => ({ value: l.id, label: l.name })),
   ];
+  // A restored destination may reference a list deleted meanwhile.
+  const destValid = options.some((o) => o.value === dest) ? dest : NEW_LIST_VALUE;
 
   const selected = groups.flatMap((g) =>
     whole.has(g.domain) ? [g.domain] : g.hosts.filter((h) => checkedHosts.has(h)),
@@ -145,7 +166,12 @@ export function ScanPicker({ result, lists, onBack, onRescan, onContinue }: Scan
 
       <label className="field-row">
         <span className="field-row__label">Add to</span>
-        <Select value={dest} options={options} ariaLabel="Destination list" onChange={setDest} />
+        <Select
+          value={destValid}
+          options={options}
+          ariaLabel="Destination list"
+          onChange={setDest}
+        />
       </label>
 
       <div className="list-detail__actions">
@@ -154,7 +180,7 @@ export function ScanPicker({ result, lists, onBack, onRescan, onContinue }: Scan
           onClick={() =>
             onContinue(
               selected,
-              dest === NEW_LIST_VALUE ? null : (lists.find((l) => l.id === dest) ?? null),
+              destValid === NEW_LIST_VALUE ? null : (lists.find((l) => l.id === destValid) ?? null),
             )
           }
         >

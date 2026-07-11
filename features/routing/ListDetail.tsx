@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Select, type SelectOption } from '@/components/ui/Select';
 import { Toggle } from '@/components/ui/Toggle';
 import { Button } from '@/components/ui/Button';
@@ -12,6 +12,7 @@ import {
   type NetInterface,
 } from '@/utils/keenetic/routing';
 import { normalizeAddresses } from '@/utils/addresses';
+import type { ListDraft } from '@/utils/ui-state';
 
 interface ListDetailProps {
   list: AddressList;
@@ -21,6 +22,10 @@ interface ListDetailProps {
   isNew?: boolean;
   /** Overrides the initial addresses (page-scan handoff); Save still diffs against `list`. */
   presetAddresses?: string[];
+  /** Unsaved edits restored after a popup reopen (applied when the target matches). */
+  draft?: ListDraft | null;
+  /** Reports every edit so it survives an accidental popup close. */
+  onDraftChange?: (draft: ListDraft) => void;
   onBack: () => void;
   onSave: (original: AddressList, edit: ListDetailEdit) => Promise<void>;
   onDelete: (listId: string) => Promise<void>;
@@ -32,20 +37,31 @@ export function ListDetail({
   busy,
   isNew,
   presetAddresses,
+  draft,
+  onDraftChange,
   onBack,
   onSave,
   onDelete,
 }: ListDetailProps) {
   const rule = list.rule;
-  const [name, setName] = useState(list.name);
+  const target = isNew ? '' : list.id;
+  // A restored draft for this same target wins over the list's saved state.
+  const restored = draft && draft.target === target ? draft : null;
+  const [name, setName] = useState(restored?.name ?? list.name);
   const [addressesText, setAddressesText] = useState(
-    (presetAddresses ?? list.addresses).join('\n'),
+    restored?.addressesText ?? (presetAddresses ?? list.addresses).join('\n'),
   );
-  const [routed, setRouted] = useState(rule?.enabled ?? false);
-  const [interfaceId, setInterfaceId] = useState(rule?.interfaceId ?? interfaces[0]?.id ?? '');
-  const [auto, setAuto] = useState(rule?.auto ?? true);
-  const [exclusive, setExclusive] = useState(rule?.exclusive ?? false);
+  const [routed, setRouted] = useState(restored?.routed ?? rule?.enabled ?? false);
+  const [interfaceId, setInterfaceId] = useState(
+    restored?.interfaceId ?? rule?.interfaceId ?? interfaces[0]?.id ?? '',
+  );
+  const [auto, setAuto] = useState(restored?.auto ?? rule?.auto ?? true);
+  const [exclusive, setExclusive] = useState(restored?.exclusive ?? rule?.exclusive ?? false);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
+
+  useEffect(() => {
+    onDraftChange?.({ target, name, addressesText, routed, interfaceId, auto, exclusive });
+  }, [onDraftChange, target, name, addressesText, routed, interfaceId, auto, exclusive]);
 
   const options: SelectOption[] = interfaces.map((i) => ({ value: i.id, label: i.name }));
   const addresses = parseAddresses(addressesText);

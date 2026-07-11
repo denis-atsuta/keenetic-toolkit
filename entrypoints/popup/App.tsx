@@ -8,9 +8,8 @@ import { AccountScreen } from '@/features/connection/AccountScreen';
 import { ComingSoon } from '@/features/placeholder/ComingSoon';
 import { ensureOriginStripRule } from '@/utils/keenetic/origin-fix';
 import { loadConnection, type RouterProfile, type RouterSettings } from '@/utils/settings';
+import { loadSection, saveSection, type SectionId } from '@/utils/ui-state';
 import './App.css';
-
-type SectionId = 'devices' | 'routing' | 'settings' | 'account';
 
 const NAV_ITEMS: RailItem[] = [
   { id: 'devices', icon: 'devices', label: 'Devices' },
@@ -43,17 +42,19 @@ function openInWindow() {
 type Screen =
   | { kind: 'loading' }
   | { kind: 'connect'; locked?: RouterProfile }
-  | { kind: 'shell'; settings: RouterSettings };
+  | { kind: 'shell'; settings: RouterSettings; section: SectionId };
 
 function App() {
   const [screen, setScreen] = useState<Screen>({ kind: 'loading' });
 
   useEffect(() => {
-    loadConnection().then((state) => {
+    // The section is loaded together with the connection so the popup opens
+    // straight where the user left it, without flashing the default one.
+    Promise.all([loadConnection(), loadSection()]).then(([state, section]) => {
       switch (state.status) {
         case 'connected':
           void ensureOriginStripRule(state.settings.origin);
-          setScreen({ kind: 'shell', settings: state.settings });
+          setScreen({ kind: 'shell', settings: state.settings, section });
           break;
         case 'locked':
           void ensureOriginStripRule(state.profile.origin);
@@ -73,24 +74,30 @@ function App() {
         <ConnectScreen
           initial={screen.locked && { address: screen.locked.origin, login: screen.locked.login }}
           locked={Boolean(screen.locked)}
-          onConnected={(settings) => setScreen({ kind: 'shell', settings })}
+          onConnected={(settings) => setScreen({ kind: 'shell', settings, section: 'devices' })}
         />
       );
     case 'shell':
       return (
-        <Shell settings={screen.settings} onLoggedOut={() => setScreen({ kind: 'connect' })} />
+        <Shell
+          settings={screen.settings}
+          initialSection={screen.section}
+          onLoggedOut={() => setScreen({ kind: 'connect' })}
+        />
       );
   }
 }
 
 function Shell({
   settings,
+  initialSection,
   onLoggedOut,
 }: {
   settings: RouterSettings;
+  initialSection: SectionId;
   onLoggedOut: () => void;
 }) {
-  const [section, setSection] = useState<SectionId>('devices');
+  const [section, setSection] = useState<SectionId>(initialSection);
 
   return (
     <div className={`shell ${IS_WINDOW ? 'shell--window' : ''}`}>
@@ -104,7 +111,10 @@ function Shell({
           items={NAV_ITEMS}
           bottomItems={BOTTOM_ITEMS}
           active={section}
-          onSelect={(id) => setSection(id as SectionId)}
+          onSelect={(id) => {
+            setSection(id as SectionId);
+            saveSection(id as SectionId);
+          }}
         />
         <main className="shell__content">
           {section === 'devices' && <DevicesScreen settings={settings} />}

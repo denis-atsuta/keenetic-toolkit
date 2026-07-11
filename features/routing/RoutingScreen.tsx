@@ -1,9 +1,16 @@
-import { useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Toggle } from '@/components/ui/Toggle';
 import { Icon } from '@/components/ui/Icon';
 import type { RouterSettings } from '@/utils/settings';
 import type { AddressList } from '@/utils/keenetic/routing';
-import { mainDomain, scanActiveTab, type ScanResult } from '@/utils/scan';
+import { mainDomain, scanActiveTab } from '@/utils/scan';
+import {
+  loadRoutingUi,
+  saveRoutingUi,
+  type ListDraft,
+  type RoutingUiState,
+  type ScanSelection,
+} from '@/utils/ui-state';
 import { useRouting } from './useRouting';
 import { ListDetail } from './ListDetail';
 import { ScanPicker } from './ScanPicker';
@@ -12,30 +19,55 @@ import './RoutingScreen.css';
 /** Sentinel for a not-yet-created list (empty id triggers the create flow). */
 const NEW_LIST: AddressList = { id: '', name: '', addresses: [], rule: undefined };
 
-/** Scan handoff: the list to open in the editor and the addresses to prefill. */
-interface ScanDraft {
-  list: AddressList;
-  preset: string[];
-}
-
 export function RoutingScreen({ settings }: { settings: RouterSettings }) {
   const { lists, interfaces, error, saving, setEnabled, saveDetail, removeList } =
     useRouting(settings);
-  const [openListId, setOpenListId] = useState<string | null>(null);
-  const [creating, setCreating] = useState(false);
-  const [scan, setScan] = useState<ScanResult | null>(null);
+  // Restored from storage.session so the popup reopens where it was left;
+  // every change is written back. Null until the restore completes.
+  const [ui, setUi] = useState<RoutingUiState | null>(null);
   const [scanBusy, setScanBusy] = useState(false);
   const [scanError, setScanError] = useState<string | null>(null);
-  const [draft, setDraft] = useState<ScanDraft | null>(null);
+
+  useEffect(() => {
+    void loadRoutingUi().then(setUi);
+  }, []);
+  useEffect(() => {
+    if (ui) saveRoutingUi(ui);
+  }, [ui]);
+
+  const patchUi = useCallback(
+    (patch: Partial<RoutingUiState>) => setUi((prev) => prev && { ...prev, ...patch }),
+    [],
+  );
+  const onDraftChange = useCallback(
+    (draft: ListDraft) => setUi((prev) => prev && { ...prev, draft }),
+    [],
+  );
+  const onScanSelection = useCallback(
+    (scanSel: ScanSelection) => setUi((prev) => prev && { ...prev, scanSel }),
+    [],
+  );
+  const closeEditor = useCallback(
+    () => setUi((prev) => prev && { ...prev, openListId: null, creating: false, handoff: null, draft: null }),
+    [],
+  );
+
+  // A handoff whose destination list vanished (deleted elsewhere) is stale.
+  useEffect(() => {
+    if (ui?.handoff && ui.handoff.listId !== '' && lists && !lists.some((l) => l.id === ui.handoff!.listId)) {
+      patchUi({ handoff: null, draft: null });
+    }
+  }, [ui, lists, patchUi]);
 
   if (error && !lists) return <p className="screen-msg error">{error}</p>;
-  if (!lists) return <p className="screen-msg hint">Loading lists…</p>;
+  if (!lists || !ui) return <p className="screen-msg hint">Loading lists…</p>;
 
   async function runScan() {
     setScanBusy(true);
     setScanError(null);
     try {
-      setScan(await scanActiveTab());
+      const result = await scanActiveTab();
+      patchUi({ scan: result, scanSel: null });
     } catch (e) {
       setScanError(e instanceof Error ? e.message : String(e));
     } finally {
@@ -45,83 +77,85 @@ export function RoutingScreen({ settings }: { settings: RouterSettings }) {
 
   async function rescan() {
     const next = await scanActiveTab();
-    setScan((prev) => {
+    setUi((prev) => {
+      if (!prev) return prev;
       // A different page (navigated away) replaces the result outright; the
       // same page merges — the buffer restarts on reload, but earlier finds
       // are still relevant.
-      if (!prev || prev.pageHost !== next.pageHost) return next;
-      return { ...next, hosts: [...new Set([...prev.hosts, ...next.hosts])] };
+      const scan =
+        !prev.scan || prev.scan.pageHost !== next.pageHost
+          ? next
+          : { ...next, hosts: [...new Set([...prev.scan.hosts, ...next.hosts])] };
+      return { ...prev, scan };
     });
   }
 
   function pickDestination(hosts: string[], destination: AddressList | null) {
-    if (destination) {
-      // Merge for review; Save diffs against the untouched original.
-      setDraft({
-        list: destination,
-        preset: [...new Set([...destination.addresses, ...hosts])],
-      });
-    } else {
-      setDraft({
-        list: { ...NEW_LIST, name: scan ? mainDomain(scan.pageHost) : '', addresses: hosts },
-        preset: hosts,
-      });
-    }
-    setScan(null);
+    patchUi({
+      scan: null,
+      scanSel: null,
+      draft: null,
+      handoff: destination
+        ? { listId: destination.id, name: '', preset: hosts }
+        : { listId: '', name: ui?.scan ? mainDomain(ui.scan.pageHost) : '', preset: hosts },
+    });
   }
 
-  if (draft) {
-    const isNew = draft.list.id === '';
+  // Scan → editor handoff, re-resolved against the fresh lists on reopen.
+  let editorTarget: { list: AddressList; preset?: string[]; isNew: boolean } | null = null;
+  if (ui.handoff) {
+    const h = ui.handoff;
+    if (h.listId === '') {
+      editorTarget = {
+        list: { ...NEW_LIST, name: h.name, addresses: h.preset },
+        preset: h.preset,
+        isNew: true,
+      };
+    } else {
+      const dest = lists.find((l) => l.id === h.listId);
+      // A vanished destination is cleared by the effect above.
+      if (dest) {
+        editorTarget = {
+          list: dest,
+          preset: [...new Set([...dest.addresses, ...h.preset])],
+          isNew: false,
+        };
+      }
+    }
+  } else if (ui.creating) {
+    editorTarget = { list: NEW_LIST, isNew: true };
+  } else if (ui.openListId) {
+    const open = lists.find((l) => l.id === ui.openListId);
+    if (open) editorTarget = { list: open, isNew: false };
+  }
+
+  if (editorTarget) {
     return (
       <ListDetail
-        list={draft.list}
+        list={editorTarget.list}
         interfaces={interfaces}
-        busy={saving.has(isNew ? '__new__' : draft.list.id)}
-        isNew={isNew}
-        presetAddresses={draft.preset}
-        onBack={() => setDraft(null)}
+        busy={saving.has(editorTarget.isNew ? '__new__' : editorTarget.list.id)}
+        isNew={editorTarget.isNew}
+        presetAddresses={editorTarget.preset}
+        draft={ui.draft}
+        onDraftChange={onDraftChange}
+        onBack={closeEditor}
         onSave={saveDetail}
         onDelete={removeList}
       />
     );
   }
 
-  if (scan) {
+  if (ui.scan) {
     return (
       <ScanPicker
-        result={scan}
+        result={ui.scan}
         lists={lists}
-        onBack={() => setScan(null)}
+        initialSelection={ui.scanSel}
+        onSelectionChange={onScanSelection}
+        onBack={() => patchUi({ scan: null, scanSel: null })}
         onRescan={rescan}
         onContinue={pickDestination}
-      />
-    );
-  }
-
-  if (creating) {
-    return (
-      <ListDetail
-        list={NEW_LIST}
-        interfaces={interfaces}
-        busy={saving.has('__new__')}
-        isNew
-        onBack={() => setCreating(false)}
-        onSave={saveDetail}
-        onDelete={removeList}
-      />
-    );
-  }
-
-  const open = openListId ? lists.find((l) => l.id === openListId) : undefined;
-  if (open) {
-    return (
-      <ListDetail
-        list={open}
-        interfaces={interfaces}
-        busy={saving.has(open.id)}
-        onBack={() => setOpenListId(null)}
-        onSave={saveDetail}
-        onDelete={removeList}
       />
     );
   }
@@ -137,7 +171,7 @@ export function RoutingScreen({ settings }: { settings: RouterSettings }) {
             <Icon name="scan" size={16} />
             {scanBusy ? 'Scanning…' : 'Scan page'}
           </button>
-          <button className="add-list" onClick={() => setCreating(true)}>
+          <button className="add-list" onClick={() => patchUi({ creating: true })}>
             <Icon name="dns" size={16} />
             Add list
           </button>
@@ -149,7 +183,7 @@ export function RoutingScreen({ settings }: { settings: RouterSettings }) {
         <ul className="rule-list">
           {lists.map((list) => (
             <li key={list.id} className="rule-row">
-              <button className="rule-open" onClick={() => setOpenListId(list.id)}>
+              <button className="rule-open" onClick={() => patchUi({ openListId: list.id })}>
                 <span className="rule-name">{list.name}</span>
                 <span className="rule-iface">
                   {list.rule ? `via ${list.rule.interfaceName || '—'}` : 'Not routed'}
