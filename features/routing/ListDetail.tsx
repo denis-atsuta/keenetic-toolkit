@@ -11,6 +11,7 @@ import {
   type ListDetailEdit,
   type NetInterface,
 } from '@/utils/keenetic/routing';
+import { normalizeAddresses } from '@/utils/addresses';
 
 interface ListDetailProps {
   list: AddressList;
@@ -83,7 +84,17 @@ export function ListDetail({
       <div className="list-detail__addresses">
         <div className="list-section__head">
           <h3 className="list-section__title">Addresses</h3>
-          <span className="list-section__count">{addresses.length}</span>
+          <div className="list-section__actions">
+            <button
+              type="button"
+              className="link-btn"
+              title="Fold subdomains and IPs already covered by a broader entry"
+              onClick={() => setAddressesText(normalizeAddresses(addressesText.split('\n')).join('\n'))}
+            >
+              Normalize
+            </button>
+            <span className="list-section__count">{addresses.length}</span>
+          </div>
         </div>
         <textarea
           className="address-input"

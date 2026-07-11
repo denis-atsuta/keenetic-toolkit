@@ -179,6 +179,26 @@
   color: var(--text-muted);
 }
 
+.list-section__actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.link-btn {
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--accent);
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.link-btn:hover {
+  text-decoration: underline;
+}
+
 .address-input {
   flex: 1;
   min-height: 0;
