@@ -7,6 +7,8 @@ interface DeviceRowProps {
   host: HotspotHost;
   state: PolicyState | undefined;
   options: SelectOption[];
+  /** Selector values hidden via Settings; the current one stays visible. */
+  hidden: ReadonlySet<string>;
   saving: boolean;
   favorite: boolean;
   onToggleFavorite: (mac: string) => void;
@@ -17,11 +19,14 @@ export function DeviceRow({
   host,
   state,
   options,
+  hidden,
   saving,
   favorite,
   onToggleFavorite,
   onChange,
 }: DeviceRowProps) {
+  const value = toSelectValue(state);
+  const visibleOptions = options.filter((o) => !hidden.has(o.value) || o.value === value);
   return (
     <li className="host-row">
       <button
@@ -43,8 +48,8 @@ export function DeviceRow({
       </span>
       <Select
         className="host-policy"
-        value={toSelectValue(state)}
-        options={options}
+        value={value}
+        options={visibleOptions}
         disabled={saving || host.registered === false}
         title={
           host.registered === false

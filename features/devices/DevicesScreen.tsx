@@ -2,6 +2,7 @@ import type { RouterSettings } from '@/utils/settings';
 import { useDevices } from './useDevices';
 import { useFavorites } from './useFavorites';
 import { useDeviceFilter } from './useDeviceFilter';
+import { useHiddenPolicies } from '../settings/useHiddenPolicies';
 import { DeviceFilters } from './DeviceFilters';
 import { DeviceRow } from './DeviceRow';
 import { buildPolicyOptions } from './policyState';
@@ -11,6 +12,7 @@ import './DevicesScreen.css';
 export function DevicesScreen({ settings }: { settings: RouterSettings }) {
   const { data, error, saving, changeState } = useDevices(settings);
   const { favorites, toggle } = useFavorites(settings.origin);
+  const { hidden } = useHiddenPolicies(settings.origin);
   const [filter, setFilter] = useDeviceFilter();
 
   if (error && !data) return <p className="screen-msg error">{error}</p>;
@@ -33,6 +35,7 @@ export function DevicesScreen({ settings }: { settings: RouterSettings }) {
               host={host}
               state={data.states[host.mac]}
               options={options}
+              hidden={hidden}
               saving={saving.has(host.mac)}
               favorite={favorites.has(host.mac)}
               onToggleFavorite={toggle}
