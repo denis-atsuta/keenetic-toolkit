@@ -22,12 +22,6 @@ Targets KeeneticOS **5.1+**. Talks to the router directly over its local HTTP AP
 - **Normalize** folds redundant entries: subdomains covered by a listed parent domain and IPs covered by a broader CIDR.
 - **Scan page** collects every host the current tab loaded, grouped by domain — pick what to route and drop it into a new or existing list. Works for blocked pages too: route the domain, reload, rescan to discover the next layer.
 
-### Quality of life
-
-- The popup reopens exactly where you left it — including unsaved edits and scan results.
-- Screens paint instantly from a cached snapshot and refresh in the background (the router's RCI is slow).
-- Open the popup as a standalone resizable window.
-
 ## Security
 
 - Challenge-response authentication only; the password itself is never stored — only a derived hash (`ha1`), kept in memory by default with opt-in persistence.
@@ -47,9 +41,8 @@ Then open `chrome://extensions`, enable **Developer mode** and **Load unpacked**
 ## Development
 
 ```bash
-npm run dev        # dev build with HMR (load .output/chrome-mv3 unpacked once)
+npm run dev        # dev build with HMR (load .output/chrome-mv3-dev unpacked once)
 npm run compile    # typecheck
-npm run zip        # store-ready archive
 ```
 
 Built with [WXT](https://wxt.dev) + React + TypeScript.
