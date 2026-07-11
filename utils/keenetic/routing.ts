@@ -49,8 +49,18 @@ interface RawInterface {
   'interface-name'?: string;
 }
 
-/** Lists joined with their routing rule and interface names, for display. */
-export async function getRoutingLists(client: KeeneticClient): Promise<AddressList[]> {
+/** Everything the Routing screen needs, fetched in one round-trip. */
+export interface RoutingData {
+  lists: AddressList[];
+  interfaces: NetInterface[];
+}
+
+/**
+ * Lists joined with their routing rule and interface names, plus the
+ * interfaces for the rule editor. One batch: the router's RCI is slow
+ * (~150 ms per `show`), so a second parallel request is a waste.
+ */
+export async function getRoutingData(client: KeeneticClient): Promise<RoutingData> {
   const [groupsRes, routesRes, ifacesRes] = await client.rciBatch([
     { show: { sc: { 'object-group': { fqdn: {} } } } },
     { show: { sc: { 'dns-proxy': { route: {} } } } },
@@ -69,7 +79,7 @@ export async function getRoutingLists(client: KeeneticClient): Promise<AddressLi
   const ruleByGroup = new Map<string, RawRoute>();
   for (const r of routes) if (r.group) ruleByGroup.set(r.group, r);
 
-  return Object.entries(groups)
+  const lists = Object.entries(groups)
     .map(([id, g]) => {
       const r = ruleByGroup.get(id);
       const rule: RuleInfo | undefined =
@@ -93,15 +103,12 @@ export async function getRoutingLists(client: KeeneticClient): Promise<AddressLi
       };
     })
     .sort((a, b) => a.name.localeCompare(b.name));
-}
 
-/** Interfaces selectable as a route target, with their friendly names. */
-export async function getInterfaces(client: KeeneticClient): Promise<NetInterface[]> {
-  const [res] = await client.rciBatch([{ show: { interface: {} } }]);
-  const raw = (extract(res, ['show', 'interface']) as Record<string, RawInterface>) ?? {};
-  return Object.entries(raw)
+  const interfaces = Object.entries(ifaces)
     .map(([id, v]) => ({ id, name: v?.description || v?.['interface-name'] || id }))
     .sort((a, b) => a.name.localeCompare(b.name));
+
+  return { lists, interfaces };
 }
 
 /** Next free "domain-listN" id, matching the web UI's naming scheme. */

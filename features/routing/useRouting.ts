@@ -4,14 +4,21 @@ import {
   commitListDetail,
   createList,
   deleteList,
-  getInterfaces,
-  getRoutingLists,
+  getRoutingData,
   setRuleEnabled,
   type AddressList,
   type ListDetailEdit,
   type NetInterface,
+  type RoutingData,
 } from '@/utils/keenetic/routing';
 import type { RouterSettings } from '@/utils/settings';
+
+// The router's RCI takes ~0.5 s to answer the shows (plus an auth handshake
+// on a cold session), so the last result is cached per router and shown
+// immediately while a fresh fetch runs in the background.
+const routingCache = storage.defineItem<Record<string, RoutingData>>('session:routingCache', {
+  fallback: {},
+});
 
 export interface UseRouting {
   lists: AddressList[] | null;
@@ -33,28 +40,33 @@ export function useRouting(settings: RouterSettings): UseRouting {
 
   const reload = useCallback(
     () =>
-      getRoutingLists(client)
-        .then(setLists)
+      getRoutingData(client)
+        .then((data) => {
+          setLists(data.lists);
+          setInterfaces(data.interfaces);
+          void routingCache
+            .getValue()
+            .then((c) => routingCache.setValue({ ...c, [settings.origin]: data }));
+        })
         .catch((e) => setError(e instanceof Error ? e.message : String(e))),
-    [client],
+    [client, settings.origin],
   );
 
   useEffect(() => {
     let cancelled = false;
-    Promise.all([getRoutingLists(client), getInterfaces(client)])
-      .then(([l, ifaces]) => {
-        if (!cancelled) {
-          setLists(l);
-          setInterfaces(ifaces);
-        }
-      })
-      .catch((e) => {
-        if (!cancelled) setError(e instanceof Error ? e.message : String(e));
-      });
+    // Stale-while-revalidate: paint the cached snapshot instantly (unless the
+    // fresh fetch won the race), then let reload() replace it.
+    void routingCache.getValue().then((c) => {
+      const hit = c[settings.origin];
+      if (cancelled || !hit) return;
+      setLists((prev) => prev ?? hit.lists);
+      setInterfaces((prev) => (prev.length > 0 ? prev : hit.interfaces));
+    });
+    void reload();
     return () => {
       cancelled = true;
     };
-  }, [client]);
+  }, [reload, settings.origin]);
 
   function withSaving<T>(listId: string, op: () => Promise<T>): Promise<T> {
     setSaving((prev) => new Set(prev).add(listId));
