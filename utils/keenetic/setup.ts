@@ -44,6 +44,27 @@ export async function connectRouter(
 }
 
 /**
+ * Verifies that a Keenetic router answers at the address without needing
+ * credentials: a challenge (or an already-live session) proves it is one.
+ *
+ * Interactive mode requests host permission and so must run from a user
+ * gesture. Non-interactive mode (auto-check on open) only proceeds when the
+ * permission is already granted, returning false otherwise.
+ */
+export async function testRouter(addressInput: string, interactive = true): Promise<boolean> {
+  const origin = normalizeOrigin(addressInput);
+  if (interactive) {
+    const granted = await browser.permissions.request({ origins: [`${origin}/*`] });
+    if (!granted) throw new Error('Access to the router address was declined');
+  } else if (!(await browser.permissions.contains({ origins: [`${origin}/*`] }))) {
+    return false;
+  }
+  await ensureOriginStripRule(origin);
+  await fetchAuthChallenge(origin, AbortSignal.timeout(3000));
+  return true;
+}
+
+/**
  * Removes the stored credentials and the router-specific runtime state
  * (DNR rule, host permission), returning the extension to its initial state.
  */

@@ -11,7 +11,11 @@ export type IconName =
   | 'star-filled'
   | 'expand'
   | 'trash'
-  | 'scan';
+  | 'scan'
+  | 'eye'
+  | 'eye-off'
+  | 'pulse'
+  | 'loader';
 
 /** Stroke-based 24×24 icons (Lucide-style), tinted via currentColor. */
 const PATHS: Record<IconName, ReactNode> = {
@@ -69,6 +73,20 @@ const PATHS: Record<IconName, ReactNode> = {
       <path d="M17 17l-3-3" />
     </>
   ),
+  eye: (
+    <>
+      <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z" />
+      <circle cx="12" cy="12" r="3" />
+    </>
+  ),
+  'eye-off': (
+    <>
+      <path d="M17.9 17.9A10 10 0 0 1 12 19c-6.5 0-10-7-10-7a18.5 18.5 0 0 1 5.1-5.9M9.9 5.2A9.4 9.4 0 0 1 12 5c6.5 0 10 7 10 7a18.5 18.5 0 0 1-2.2 3.2M14.1 14.1a3 3 0 1 1-4.2-4.2" />
+      <path d="M3 3l18 18" />
+    </>
+  ),
+  pulse: <path d="M22 12h-4l-3 9L9 3l-3 9H2" />,
+  loader: <path d="M21 12a9 9 0 1 1-6.2-8.6" />,
 };
 
 interface IconProps {

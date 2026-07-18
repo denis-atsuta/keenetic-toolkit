@@ -6,10 +6,53 @@
   width: 360px;
 }
 
+.connect__brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 15px;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text);
+}
+
+.connect__brand b {
+  color: var(--accent);
+  font-weight: 700;
+}
+
+.connect__logo {
+  display: block;
+  width: 26px;
+  height: 26px;
+}
+
 .connect__title {
   margin: 0 0 2px;
   font-size: 17px;
   font-weight: 500;
+}
+
+.connect__test-ok {
+  margin: -8px 0 0;
+  font-size: 12px;
+  color: var(--success);
+}
+
+.connect__test-fail {
+  margin: -8px 0 0;
+  font-size: 12px;
+}
+
+.connect__row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.connect__row .field {
+  flex: 1;
 }
 
 .connect__remember {

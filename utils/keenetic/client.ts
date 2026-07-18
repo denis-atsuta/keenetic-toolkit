@@ -41,8 +41,11 @@ export function collectRciErrors(value: unknown): string[] {
  * Returns the current auth challenge, or null if a previous session is still
  * alive. Throws KeeneticApiError if the endpoint does not look like Keenetic.
  */
-export async function fetchAuthChallenge(origin: string): Promise<AuthChallenge | null> {
-  const res = await fetch(`${origin}/auth`, { credentials: 'include' });
+export async function fetchAuthChallenge(
+  origin: string,
+  signal?: AbortSignal,
+): Promise<AuthChallenge | null> {
+  const res = await fetch(`${origin}/auth`, { credentials: 'include', signal });
   if (res.ok) return null;
   if (res.status !== 401) {
     throw new KeeneticApiError(`Unexpected /auth response: ${res.status}`, res.status);

@@ -14,7 +14,7 @@ export function Header({ title, subtitle, onExpand }: HeaderProps) {
   return (
     <header className="header">
       <div className="header__left">
-        <img className="header__logo" src="/icon/32.png" alt="" />
+        <img className="header__logo" src="/icon/96.png" alt="" />
         <h1 className="brand">
           <b>{first}</b>
           {rest.length > 0 && ` ${rest.join(' ')}`}

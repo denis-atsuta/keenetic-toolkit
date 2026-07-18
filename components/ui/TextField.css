@@ -34,3 +34,36 @@
 .field input:focus + .field__label {
   color: var(--accent);
 }
+
+.field--trailing input {
+  padding-right: 40px;
+}
+
+.field__trailing {
+  position: absolute;
+  top: 0;
+  right: 6px;
+  height: 100%;
+  display: flex;
+  align-items: center;
+}
+
+.field__btn {
+  display: flex;
+  align-items: center;
+  padding: 4px;
+  border: none;
+  background: none;
+  color: var(--text-muted);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+}
+
+.field__btn:hover {
+  color: var(--accent);
+}
+
+.field__btn:disabled {
+  color: var(--text-muted);
+  cursor: default;
+}
