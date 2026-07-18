@@ -24,8 +24,12 @@ export default defineConfig({
     // popup grants temporary access to the active tab only — no broad host
     // access and no extra install warning.
     permissions: ['storage', 'declarativeNetRequestWithHostAccess', 'scripting', 'activeTab'],
-    // Router access is requested at runtime for its origin only — broad
-    // host_permissions would slow down Chrome Web Store review.
+    // The default router address is granted up front so the first
+    // Test/Connect happens without the permission prompt (which closes the
+    // popup). One narrow host adds only a mild install warning.
+    host_permissions: ['http://my.keenetic.net/*'],
+    // Any other address (LAN IP, custom name) is requested at runtime for
+    // its origin only — broad host_permissions would slow down CWS review.
     optional_host_permissions: ['http://*/*', 'https://*/*'],
   },
 });

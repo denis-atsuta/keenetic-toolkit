@@ -67,3 +67,8 @@
   color: var(--text-muted);
   cursor: default;
 }
+
+.field__btn--ok,
+.field__btn--ok:hover {
+  color: var(--success);
+}

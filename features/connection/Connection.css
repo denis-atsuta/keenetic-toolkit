@@ -34,12 +34,6 @@
   font-weight: 500;
 }
 
-.connect__test-ok {
-  margin: -8px 0 0;
-  font-size: 12px;
-  color: var(--success);
-}
-
 .connect__test-fail {
   margin: -8px 0 0;
   font-size: 12px;

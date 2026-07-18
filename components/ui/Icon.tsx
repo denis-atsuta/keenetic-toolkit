@@ -15,7 +15,8 @@ export type IconName =
   | 'eye'
   | 'eye-off'
   | 'pulse'
-  | 'loader';
+  | 'loader'
+  | 'check';
 
 /** Stroke-based 24×24 icons (Lucide-style), tinted via currentColor. */
 const PATHS: Record<IconName, ReactNode> = {
@@ -87,6 +88,7 @@ const PATHS: Record<IconName, ReactNode> = {
   ),
   pulse: <path d="M22 12h-4l-3 9L9 3l-3 9H2" />,
   loader: <path d="M21 12a9 9 0 1 1-6.2-8.6" />,
+  check: <path d="M20 6 9 17l-5-5" />,
 };
 
 interface IconProps {

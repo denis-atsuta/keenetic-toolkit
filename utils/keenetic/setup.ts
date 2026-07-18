@@ -43,6 +43,23 @@ export async function connectRouter(
   return settings;
 }
 
+/** Firmware release string (e.g. "5.1.2"), or null when unavailable. */
+export async function fetchFirmwareVersion(settings: RouterSettings): Promise<string | null> {
+  const client = new KeeneticClient(settings);
+  const v = await client.rci<{ release?: string } | null>('/show/version');
+  return v?.release ?? null;
+}
+
+/**
+ * True for firmware releases below 5.1 — the oldest KeeneticOS the
+ * extension is verified against. Unparseable versions pass as supported.
+ */
+export function isUnsupportedFirmware(release: string): boolean {
+  const [major, minor] = release.split('.').map(Number);
+  if (!Number.isFinite(major) || !Number.isFinite(minor)) return false;
+  return major < 5 || (major === 5 && minor < 1);
+}
+
 /**
  * Verifies that a Keenetic router answers at the address without needing
  * credentials: a challenge (or an already-live session) proves it is one.

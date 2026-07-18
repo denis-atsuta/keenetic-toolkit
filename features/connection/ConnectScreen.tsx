@@ -4,7 +4,13 @@ import { Button } from '@/components/ui/Button';
 import { Checkbox } from '@/components/ui/Checkbox';
 import { HelpTip } from '@/components/ui/HelpTip';
 import { Icon } from '@/components/ui/Icon';
-import { connectRouter, testRouter } from '@/utils/keenetic/setup';
+import {
+  connectRouter,
+  disconnectRouter,
+  fetchFirmwareVersion,
+  isUnsupportedFirmware,
+  testRouter,
+} from '@/utils/keenetic/setup';
 import { KeeneticAuthError } from '@/utils/keenetic/client';
 import type { RouterSettings } from '@/utils/settings';
 import './Connection.css';
@@ -42,6 +48,9 @@ export function ConnectScreen({ onConnected, initial, locked }: ConnectScreenPro
   const [error, setError] = useState<string | null>(null);
   const [test, setTest] = useState<TestState>({ status: 'idle' });
   const [hydrated, setHydrated] = useState(false);
+  const [warning, setWarning] = useState<{ settings: RouterSettings; version: string } | null>(
+    null,
+  );
 
   useEffect(() => {
     let cancelled = false;
@@ -74,6 +83,16 @@ export function ConnectScreen({ onConnected, initial, locked }: ConnectScreenPro
     setError(null);
     try {
       const settings = await connectRouter(address, login, password, remember);
+      let version: string | null = null;
+      try {
+        version = await fetchFirmwareVersion(settings);
+      } catch {
+        // Version endpoint hiccup should not fail the whole connect.
+      }
+      if (version && isUnsupportedFirmware(version)) {
+        setWarning({ settings, version });
+        return;
+      }
       await connectDraft.removeValue();
       onConnected(settings);
     } catch (e) {
@@ -108,6 +127,42 @@ export function ConnectScreen({ onConnected, initial, locked }: ConnectScreenPro
     }
   }
 
+  async function confirmWarning() {
+    if (!warning) return;
+    await connectDraft.removeValue();
+    onConnected(warning.settings);
+  }
+
+  async function cancelWarning() {
+    if (!warning) return;
+    setWarning(null);
+    // Undo the just-made connection: clear stored credentials, the DNR rule
+    // and the host permission, returning to a clean slate.
+    await disconnectRouter(warning.settings.origin);
+  }
+
+  if (warning) {
+    return (
+      <div className="connect">
+        <div className="connect__brand">
+          <img className="connect__logo" src="/icon/96.png" alt="" />
+          <span>
+            <b>Keenetic</b> Toolkit
+          </span>
+        </div>
+        <h1 className="connect__title">Unsupported firmware</h1>
+        <p className="hint">
+          This router runs KeeneticOS {warning.version}. The extension is tested on 5.1 and newer
+          only — on older firmware some features may work incorrectly or not at all.
+        </p>
+        <Button onClick={() => void confirmWarning()}>Connect anyway</Button>
+        <Button variant="outline" onClick={() => void cancelWarning()}>
+          Cancel
+        </Button>
+      </div>
+    );
+  }
+
   return (
     <form
       className="connect"
@@ -136,13 +191,15 @@ export function ConnectScreen({ onConnected, initial, locked }: ConnectScreenPro
           trailing={
             <button
               type="button"
-              className="field__btn"
-              title="Test the connection"
+              className={test.status === 'ok' ? 'field__btn field__btn--ok' : 'field__btn'}
+              title={test.status === 'ok' ? 'Keenetic router found' : 'Test the connection'}
               disabled={test.status === 'busy'}
               onClick={() => void runTest(address)}
             >
               {test.status === 'busy' ? (
                 <Icon name="loader" size={18} className="spin" />
+              ) : test.status === 'ok' ? (
+                <Icon name="check" size={18} />
               ) : (
                 <Icon name="pulse" size={18} />
               )}
@@ -155,7 +212,6 @@ export function ConnectScreen({ onConnected, initial, locked }: ConnectScreenPro
           address you open the router&apos;s web interface at.
         </HelpTip>
       </div>
-      {test.status === 'ok' && <p className="connect__test-ok">Keenetic router found.</p>}
       {test.status === 'fail' && <p className="error connect__test-fail">{test.message}</p>}
       <div className="connect__row">
         <TextField label="Login" value={login} onChange={setLogin} required />
