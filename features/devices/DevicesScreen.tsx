@@ -38,8 +38,8 @@ export function DevicesScreen({ settings }: { settings: RouterSettings }) {
               hidden={hidden}
               saving={saving.has(host.mac)}
               favorite={favorites.has(host.mac)}
-              onToggleFavorite={toggle}
-              onChange={changeState}
+              onToggleFavorite={(mac) => void toggle(mac)}
+              onChange={(mac, state) => void changeState(mac, state)}
             />
           ))}
         </ul>

@@ -7,7 +7,7 @@ export function useHiddenPolicies(origin: string) {
 
   useEffect(() => {
     let cancelled = false;
-    getHiddenPolicies(origin).then((h) => {
+    void getHiddenPolicies(origin).then((h) => {
       if (!cancelled) setHidden(h);
     });
     return () => {

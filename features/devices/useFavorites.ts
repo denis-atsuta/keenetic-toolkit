@@ -7,7 +7,7 @@ export function useFavorites(origin: string) {
 
   useEffect(() => {
     let cancelled = false;
-    getFavorites(origin).then((f) => {
+    void getFavorites(origin).then((f) => {
       if (!cancelled) setFavorites(f);
     });
     return () => {

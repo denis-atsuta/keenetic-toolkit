@@ -11,7 +11,7 @@ export function useDeviceFilter(): [DeviceFilter, (filter: DeviceFilter) => void
 
   useEffect(() => {
     let cancelled = false;
-    filterStore.getValue().then((stored) => {
+    void filterStore.getValue().then((stored) => {
       if (!cancelled) setFilter(stored);
     });
     return () => {

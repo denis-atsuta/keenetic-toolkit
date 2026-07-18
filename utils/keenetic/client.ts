@@ -127,6 +127,6 @@ export class KeeneticClient {
     if (!res.ok) {
       throw new KeeneticApiError(`RCI ${path} failed: ${res.status}`, res.status);
     }
-    return res.json();
+    return res.json() as Promise<T>;
   }
 }

@@ -56,7 +56,7 @@ function App() {
   useEffect(() => {
     // The section is loaded together with the connection so the popup opens
     // straight where the user left it, without flashing the default one.
-    Promise.all([loadConnection(), loadSection()]).then(([state, section]) => {
+    void Promise.all([loadConnection(), loadSection()]).then(([state, section]) => {
       switch (state.status) {
         case 'connected':
           void ensureOriginStripRule(state.settings.origin);

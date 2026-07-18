@@ -69,6 +69,9 @@ export function ScanScreen({ settings }: { settings: RouterSettings }) {
       lists &&
       !lists.some((l) => l.id === ui.handoff!.listId)
     ) {
+      // patchUi syncs the persisted popup state in storage, not derived
+      // render state, so an effect is the right place for this cleanup.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       patchUi({ handoff: null, draft: null });
     }
   }, [ui, lists, patchUi]);

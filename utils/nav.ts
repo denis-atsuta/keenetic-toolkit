@@ -23,7 +23,9 @@ export function dispatchBack(): boolean {
 /** Registers `handler` for the screen's lifetime; always sees fresh state. */
 export function useBackHandler(handler: BackHandler): void {
   const ref = useRef(handler);
-  ref.current = handler;
+  useEffect(() => {
+    ref.current = handler;
+  });
   useEffect(() => {
     const h: BackHandler = () => ref.current();
     handlers.push(h);

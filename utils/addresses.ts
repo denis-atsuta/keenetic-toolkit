@@ -54,7 +54,7 @@ function parseIpv6(addr: string): bigint | null {
   if (halves.length === 2) {
     const fill = 8 - head.length - tail.length;
     if (fill < 0) return null;
-    groups = [...head, ...Array(fill).fill('0'), ...tail];
+    groups = [...head, ...Array.from({ length: fill }, () => '0'), ...tail];
   } else {
     groups = head;
   }
