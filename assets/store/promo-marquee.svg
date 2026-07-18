@@ -1,0 +1,35 @@
+<svg width="1400" height="560" viewBox="0 0 1400 560" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#101725"/><stop offset="1" stop-color="#1b2a41"/>
+    </linearGradient>
+  </defs>
+  <rect width="1400" height="560" fill="url(#bg)"/>
+  <circle cx="1260.0" cy="56.0" r="280.0" fill="#0097dc" opacity="0.06"/>
+  <circle cx="112.0" cy="532.0" r="224.0" fill="#0097dc" opacity="0.05"/>
+  <g transform="translate(600 119) scale(1.9607843137254901) translate(-13 -13)">
+  <!-- Keenetic Toolkit mark: a white gear on a rounded plate, the letter K inside. -->
+  <rect x="13" y="13" width="102" height="102" rx="22" fill="#0097DC"/>
+  <g fill="#1B2A41" transform="translate(64 64) scale(0.9) translate(-64 -64)">
+    <rect x="53" y="13" width="22" height="22"/>
+    <rect x="53" y="13" width="22" height="22" transform="rotate(45 64 64)"/>
+    <rect x="53" y="13" width="22" height="22" transform="rotate(90 64 64)"/>
+    <rect x="53" y="13" width="22" height="22" transform="rotate(135 64 64)"/>
+    <rect x="53" y="13" width="22" height="22" transform="rotate(180 64 64)"/>
+    <rect x="53" y="13" width="22" height="22" transform="rotate(225 64 64)"/>
+    <rect x="53" y="13" width="22" height="22" transform="rotate(270 64 64)"/>
+    <rect x="53" y="13" width="22" height="22" transform="rotate(315 64 64)"/>
+    <circle cx="64" cy="64" r="42"/>
+  </g>
+  <clipPath id="disc">
+    <circle cx="64" cy="64" r="30"/>
+  </clipPath>
+  <g clip-path="url(#disc)" stroke="#ffffff" stroke-width="14.5" stroke-linecap="butt" fill="none">
+    <path d="M49.5 28v72"/>
+    <path d="M48.5 70 93 25.5"/>
+    <path d="M63 55.5 97 91"/>
+  </g>
+</g>
+  <text x="700.0" y="403" text-anchor="middle" font-family="DejaVu Sans, sans-serif" font-size="44" font-weight="bold" letter-spacing="3" fill="#ffffff"><tspan fill="#33abe4">KEENETIC</tspan> TOOLKIT</text>
+  <text x="700.0" y="441" text-anchor="middle" font-family="DejaVu Sans, sans-serif" font-size="24" fill="#8b96a8">Manage your Keenetic router from the toolbar</text>
+</svg>
