@@ -2,7 +2,7 @@
   "name": "keenetic-toolkit",
   "description": "Chrome extension to manage Keenetic router connection policies and static routes without opening the web UI",
   "private": true,
-  "version": "0.1.0",
+  "version": "0.2.0",
   "type": "module",
   "license": "MIT",
   "scripts": {
