@@ -3,6 +3,11 @@ import { defineConfig } from 'wxt';
 // See https://wxt.dev/api/config.html
 export default defineConfig({
   modules: ['@wxt-dev/module-react'],
+  imports: {
+    eslintrc: {
+      enabled: 9,
+    },
+  },
   // The dev server runs in WSL2 and cannot launch Windows-side Chrome —
   // load the extension manually via "Load unpacked" instead.
   webExt: {
