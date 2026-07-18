@@ -5,8 +5,11 @@ updates:
     schedule:
       interval: weekly
     groups:
+      # Majors arrive as individual PRs so one incompatible bump does not
+      # block the routine minor/patch batch.
       npm-dependencies:
         patterns: ['*']
+        update-types: ['minor', 'patch']
 
   - package-ecosystem: github-actions
     directory: /

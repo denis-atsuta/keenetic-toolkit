@@ -2,7 +2,7 @@
 
 # Keenetic Toolkit
 
-[![CI](https://github.com/denis-atsuta/keenetic-toolkit/actions/workflows/ci.yml/badge.svg)](https://github.com/denis-atsuta/keenetic-toolkit/actions/workflows/ci.yml)
+[![CI](https://github.com/denis-atsuta/keenetic-toolkit/actions/workflows/ci.yml/badge.svg?event=push)](https://github.com/denis-atsuta/keenetic-toolkit/actions/workflows/ci.yml)
 
 Chrome extension for managing a [Keenetic](https://keenetic.com/) router without opening its web UI.
 
