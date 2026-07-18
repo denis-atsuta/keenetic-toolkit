@@ -2,6 +2,8 @@
 
 # Keenetic Toolkit
 
+[![CI](https://github.com/denis-atsuta/keenetic-toolkit/actions/workflows/ci.yml/badge.svg)](https://github.com/denis-atsuta/keenetic-toolkit/actions/workflows/ci.yml)
+
 Chrome extension for managing a [Keenetic](https://keenetic.com/) router without opening its web UI.
 
 Targets KeeneticOS **5.1+**. Talks to the router directly over its local HTTP API (RCI) — nothing goes through third-party servers.
@@ -29,20 +31,22 @@ Targets KeeneticOS **5.1+**. Talks to the router directly over its local HTTP AP
 - Host access is requested at runtime for the router's address only; `scripting`/`activeTab` power the page scan and reach nothing without your click.
 - Recommended: create a dedicated router account for the extension instead of using your main one.
 
-## Install (developer mode)
+## Install
+
+Grab the latest `-chrome.zip` (or `-firefox.zip`) from [Releases](https://github.com/denis-atsuta/keenetic-toolkit/releases), unpack it, then open `chrome://extensions`, enable **Developer mode** and **Load unpacked** → the unpacked folder.
+
+Or build from source:
 
 ```bash
 npm install
 npm run build      # production build into .output/chrome-mv3
 ```
 
-Then open `chrome://extensions`, enable **Developer mode** and **Load unpacked** → `.output/chrome-mv3`.
-
 ## Development
 
 ```bash
 npm run dev        # dev build with HMR (load .output/chrome-mv3-dev unpacked once)
-npm run compile    # typecheck
+npm run check      # typecheck + eslint + prettier
 ```
 
 Built with [WXT](https://wxt.dev) + React + TypeScript.
