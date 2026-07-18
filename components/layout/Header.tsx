@@ -13,10 +13,13 @@ export function Header({ title, subtitle, onExpand }: HeaderProps) {
   const [first, ...rest] = title.split(' ');
   return (
     <header className="header">
-      <h1 className="brand">
-        <b>{first}</b>
-        {rest.length > 0 && ` ${rest.join(' ')}`}
-      </h1>
+      <div className="header__left">
+        <img className="header__logo" src="/icon/32.png" alt="" />
+        <h1 className="brand">
+          <b>{first}</b>
+          {rest.length > 0 && ` ${rest.join(' ')}`}
+        </h1>
+      </div>
       <div className="header__right">
         {subtitle && <span className="header__subtitle">{subtitle}</span>}
         {onExpand && (
