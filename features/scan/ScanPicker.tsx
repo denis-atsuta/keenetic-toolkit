@@ -130,9 +130,8 @@ export function ScanPicker({
       {rescanError && <p className="error">{rescanError}</p>}
       {!result.pageLoaded && (
         <p className="scan__note">
-          The page did not load — likely the site itself is blocked, so only its domain is
-          listed. Add it to a routed list, reload the page and scan again to see what else it
-          needs.
+          The page did not load — likely the site itself is blocked, so only its domain is listed.
+          Add it to a routed list, reload the page and scan again to see what else it needs.
         </p>
       )}
 

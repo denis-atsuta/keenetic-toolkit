@@ -96,9 +96,7 @@ export async function getRoutingData(client: KeeneticClient): Promise<RoutingDat
       return {
         id,
         name: g.description || id,
-        addresses: (g.include ?? [])
-          .map((e) => e.address)
-          .filter((a): a is string => Boolean(a)),
+        addresses: (g.include ?? []).map((e) => e.address).filter((a): a is string => Boolean(a)),
         rule,
       };
     })

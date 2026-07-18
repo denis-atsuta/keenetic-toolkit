@@ -113,7 +113,9 @@ export function ListDetail({
               type="button"
               className="link-btn"
               title="Fold subdomains and IPs already covered by a broader entry"
-              onClick={() => setAddressesText(normalizeAddresses(addressesText.split('\n')).join('\n'))}
+              onClick={() =>
+                setAddressesText(normalizeAddresses(addressesText.split('\n')).join('\n'))
+              }
             >
               Normalize
             </button>

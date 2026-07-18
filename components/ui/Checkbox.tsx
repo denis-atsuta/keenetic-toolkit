@@ -20,7 +20,14 @@ export function Checkbox({ checked, onChange, disabled, children }: CheckboxProp
       />
       <span className="checkbox__box" aria-hidden="true">
         <svg width="12" height="12" viewBox="0 0 12 12">
-          <path d="M2.5 6.2l2.3 2.3L9.5 3.5" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+          <path
+            d="M2.5 6.2l2.3 2.3L9.5 3.5"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
         </svg>
       </span>
       <span className="checkbox__label">{children}</span>

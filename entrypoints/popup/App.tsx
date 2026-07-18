@@ -163,9 +163,7 @@ function Shell({
           {section === 'routing' && <RoutingScreen settings={settings} />}
           {section === 'scan' && <ScanScreen settings={settings} />}
           {section === 'settings' && <SettingsScreen settings={settings} />}
-          {section === 'account' && (
-            <AccountScreen settings={settings} onLoggedOut={onLoggedOut} />
-          )}
+          {section === 'account' && <AccountScreen settings={settings} onLoggedOut={onLoggedOut} />}
         </main>
       </div>
     </div>

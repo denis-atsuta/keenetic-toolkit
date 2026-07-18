@@ -67,9 +67,9 @@ export function ConnectScreen({ onConnected, initial, locked }: ConnectScreenPro
           Remember on this device
         </Checkbox>
         <HelpTip>
-          Your password is never stored — only a hash of it. By default that hash is kept in
-          memory and cleared when the browser closes; turn this on to store it on this device so
-          you stay signed in after a restart.
+          Your password is never stored — only a hash of it. By default that hash is kept in memory
+          and cleared when the browser closes; turn this on to store it on this device so you stay
+          signed in after a restart.
         </HelpTip>
       </div>
       {error && <p className="error">{error}</p>}

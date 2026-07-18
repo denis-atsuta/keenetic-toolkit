@@ -63,7 +63,12 @@ export function ScanScreen({ settings }: { settings: RouterSettings }) {
 
   // A handoff whose destination list vanished (deleted elsewhere) is stale.
   useEffect(() => {
-    if (ui?.handoff && ui.handoff.listId !== '' && lists && !lists.some((l) => l.id === ui.handoff!.listId)) {
+    if (
+      ui?.handoff &&
+      ui.handoff.listId !== '' &&
+      lists &&
+      !lists.some((l) => l.id === ui.handoff!.listId)
+    ) {
       patchUi({ handoff: null, draft: null });
     }
   }, [ui, lists, patchUi]);

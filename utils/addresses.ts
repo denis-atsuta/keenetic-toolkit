@@ -105,7 +105,11 @@ export function normalizeAddresses(entries: string[]): string[] {
     if (!raw) continue;
     const ip = parseIp(raw) ?? undefined;
     const domain = ip ? undefined : DOMAIN_RE.test(raw) ? raw.toLowerCase() : undefined;
-    const key = ip ? `ip:${ip.version}:${ip.value >> BigInt((ip.version === 4 ? V4_BITS : V6_BITS) - ip.prefix)}/${ip.prefix}` : domain ? `d:${domain}` : `o:${raw}`;
+    const key = ip
+      ? `ip:${ip.version}:${ip.value >> BigInt((ip.version === 4 ? V4_BITS : V6_BITS) - ip.prefix)}/${ip.prefix}`
+      : domain
+        ? `d:${domain}`
+        : `o:${raw}`;
     if (seen.has(key)) continue;
     seen.add(key);
     items.push({ raw, key, domain, ip });

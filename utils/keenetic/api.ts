@@ -29,10 +29,7 @@ export interface HotspotHost {
  *             policy stays in the config but is inert, so deny wins)
  */
 export type PolicyState =
-  | { kind: 'default' }
-  | { kind: 'segment' }
-  | { kind: 'deny' }
-  | { kind: 'policy'; id: string };
+  { kind: 'default' } | { kind: 'segment' } | { kind: 'deny' } | { kind: 'policy'; id: string };
 
 /** mac → access state; hosts without a config entry are on the default. */
 export type HostStates = Record<string, PolicyState>;

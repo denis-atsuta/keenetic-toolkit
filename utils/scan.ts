@@ -108,4 +108,3 @@ export function groupHosts(hosts: string[]): HostGroup[] {
 export function mainDomain(host: string): string {
   return getDomain(host) ?? host;
 }
-
