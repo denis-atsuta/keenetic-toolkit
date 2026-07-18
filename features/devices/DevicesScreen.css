@@ -161,3 +161,28 @@
   flex: none;
   width: 108px;
 }
+
+.host-register {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 108px;
+  height: 28px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--accent);
+  background: none;
+  border: 1px solid var(--accent);
+  border-radius: var(--radius-sm);
+}
+
+.host-register:hover:not(:disabled) {
+  color: var(--on-accent);
+  background: var(--accent);
+}
+
+.host-register:disabled {
+  opacity: 0.7;
+  cursor: default;
+}

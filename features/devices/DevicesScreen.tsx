@@ -10,7 +10,7 @@ import { filterAndSortHosts } from './filter';
 import './DevicesScreen.css';
 
 export function DevicesScreen({ settings }: { settings: RouterSettings }) {
-  const { data, error, saving, changeState } = useDevices(settings);
+  const { data, error, saving, changeState, register } = useDevices(settings);
   const { favorites, toggle } = useFavorites(settings.origin);
   const { hidden } = useHiddenPolicies(settings.origin);
   const [filter, setFilter] = useDeviceFilter();
@@ -40,6 +40,7 @@ export function DevicesScreen({ settings }: { settings: RouterSettings }) {
               favorite={favorites.has(host.mac)}
               onToggleFavorite={(mac) => void toggle(mac)}
               onChange={(mac, state) => void changeState(mac, state)}
+              onRegister={(mac) => void register(mac)}
             />
           ))}
         </ul>

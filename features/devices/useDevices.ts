@@ -28,6 +28,7 @@ export interface UseDevices {
   /** MACs with an in-flight state change. */
   saving: ReadonlySet<string>;
   changeState: (mac: string, state: PolicyState) => Promise<void>;
+  register: (mac: string) => Promise<void>;
 }
 
 /** Loads devices, policies and their access states, and applies changes. */
@@ -86,5 +87,36 @@ export function useDevices(settings: RouterSettings): UseDevices {
     }
   }
 
-  return { data, error, saving, changeState };
+  /** Registers the host as known, named after its DHCP hostname (or MAC). */
+  async function register(mac: string) {
+    const host = data?.hosts.find((h) => h.mac === mac);
+    const name = host?.hostname ?? host?.name ?? mac.replace(/:/g, '');
+    setSaving((prev) => new Set(prev).add(mac));
+    setError(null);
+    try {
+      await api.registerHost(mac, name);
+      const patch = (d: DevicesData): DevicesData => ({
+        ...d,
+        hosts: d.hosts.map((h) =>
+          h.mac === mac ? { ...h, registered: true, name: h.name ?? name } : h,
+        ),
+      });
+      setData((prev) => prev && patch(prev));
+      if (data) {
+        const next = patch(data);
+        const c = await devicesCache.getValue();
+        void devicesCache.setValue({ ...c, [settings.origin]: next });
+      }
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setSaving((prev) => {
+        const next = new Set(prev);
+        next.delete(mac);
+        return next;
+      });
+    }
+  }
+
+  return { data, error, saving, changeState, register };
 }

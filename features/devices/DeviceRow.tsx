@@ -13,6 +13,7 @@ interface DeviceRowProps {
   favorite: boolean;
   onToggleFavorite: (mac: string) => void;
   onChange: (mac: string, state: PolicyState) => void;
+  onRegister: (mac: string) => void;
 }
 
 export function DeviceRow({
@@ -24,6 +25,7 @@ export function DeviceRow({
   favorite,
   onToggleFavorite,
   onChange,
+  onRegister,
 }: DeviceRowProps) {
   const value = toSelectValue(state);
   const visibleOptions = options.filter((o) => !hidden.has(o.value) || o.value === value);
@@ -46,18 +48,25 @@ export function DeviceRow({
         <span className="host-name">{host.name ?? host.mac}</span>
         <span className="host-ip">{host.ip ?? host.mac}</span>
       </span>
-      <Select
-        className="host-policy"
-        value={value}
-        options={visibleOptions}
-        disabled={saving || host.registered === false}
-        title={
-          host.registered === false
-            ? 'Unregistered device — register it in the router UI first'
-            : undefined
-        }
-        onChange={(v) => onChange(host.mac, fromSelectValue(v))}
-      />
+      {host.registered === false ? (
+        <button
+          type="button"
+          className="host-register"
+          title="Register the device on the router to manage its access"
+          disabled={saving}
+          onClick={() => onRegister(host.mac)}
+        >
+          {saving ? <Icon name="loader" size={16} className="spin" /> : 'Register'}
+        </button>
+      ) : (
+        <Select
+          className="host-policy"
+          value={value}
+          options={visibleOptions}
+          disabled={saving}
+          onChange={(v) => onChange(host.mac, fromSelectValue(v))}
+        />
+      )}
     </li>
   );
 }

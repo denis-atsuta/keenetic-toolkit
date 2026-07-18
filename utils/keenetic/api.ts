@@ -123,6 +123,17 @@ export class KeeneticApi {
     ]);
   }
 
+  /**
+   * Registers a host as known under the given name and persists the config.
+   * Registration is what unlocks policy assignment for the host.
+   */
+  async registerHost(mac: string, name: string): Promise<void> {
+    await this.client.rciBatch([
+      { known: { host: { mac, name } } },
+      { system: { configuration: { save: {} } } },
+    ]);
+  }
+
   /** GETs a config endpoint that may not exist yet (404 → fallback). */
   private async orEmpty<T>(path: string, fallback: T): Promise<T> {
     try {

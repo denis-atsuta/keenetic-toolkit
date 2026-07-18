@@ -4,7 +4,7 @@ import type { DeviceFilter, StatusFilter } from './filter';
 const STATUS_TABS: { value: StatusFilter; label: string }[] = [
   { value: 'all', label: 'All' },
   { value: 'online', label: 'Online' },
-  { value: 'unregistered', label: 'New' },
+  { value: 'unregistered', label: 'Unregistered' },
 ];
 
 interface DeviceFiltersProps {
