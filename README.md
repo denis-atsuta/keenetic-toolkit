@@ -33,7 +33,9 @@ Targets KeeneticOS **5.1+**. Talks to the router directly over its local HTTP AP
 
 ## Install
 
-Grab the latest `-chrome.zip` (or `-firefox.zip`) from [Releases](https://github.com/denis-atsuta/keenetic-toolkit/releases), unpack it, then open `chrome://extensions`, enable **Developer mode** and **Load unpacked** → the unpacked folder.
+Install from the [Chrome Web Store](https://chromewebstore.google.com/detail/keenetic-toolkit/dnmchmbeaakfifbfghnkhlagkbbmaonl).
+
+Or grab the latest `-chrome.zip` (or `-firefox.zip`) from [Releases](https://github.com/denis-atsuta/keenetic-toolkit/releases), unpack it, then open `chrome://extensions`, enable **Developer mode** and **Load unpacked** → the unpacked folder.
 
 Or build from source:
 
