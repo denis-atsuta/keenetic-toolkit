@@ -18,7 +18,7 @@ const V6_BITS = 128;
 
 function parseIp(input: string): ParsedIp | null {
   const [addr, prefixStr, extra] = input.split('/');
-  if (extra !== undefined) return null;
+  if (addr === undefined || extra !== undefined) return null;
 
   if (addr.includes(':')) {
     const value = parseIpv6(addr);
@@ -47,8 +47,8 @@ function parseIpv6(addr: string): bigint | null {
   if (halves.length > 2) return null;
 
   const toGroups = (s: string) => (s === '' ? [] : s.split(':'));
-  const head = toGroups(halves[0]);
-  const tail = halves.length === 2 ? toGroups(halves[1]) : [];
+  const head = toGroups(halves[0] ?? '');
+  const tail = halves.length === 2 ? toGroups(halves[1] ?? '') : [];
 
   let groups: string[];
   if (halves.length === 2) {

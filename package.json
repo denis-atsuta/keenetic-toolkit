@@ -21,25 +21,25 @@
     "postinstall": "wxt prepare"
   },
   "dependencies": {
-    "@noble/hashes": "^2.2.0",
-    "@radix-ui/react-select": "^2.3.3",
-    "@radix-ui/react-tooltip": "^1.2.12",
-    "react": "^19.2.4",
-    "react-dom": "^19.2.4",
-    "tldts-experimental": "^7.4.9"
+    "@noble/hashes": "^2.3.0",
+    "@radix-ui/react-select": "^2.3.7",
+    "@radix-ui/react-tooltip": "^1.2.16",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8",
+    "tldts-experimental": "^7.4.10"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
-    "@types/react": "^19.2.14",
-    "@types/react-dom": "^19.2.3",
+    "@types/react": "^19.2.18",
+    "@types/react-dom": "^19.2.4",
     "@wxt-dev/module-react": "^1.1.5",
-    "eslint": "^10.7.0",
+    "eslint": "^10.8.1",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-react-hooks": "^7.1.1",
-    "prettier": "^3.9.5",
+    "prettier": "^3.9.6",
     "typescript": "^6.0.3",
-    "typescript-eslint": "^8.64.0",
-    "wxt": "^0.20.27"
+    "typescript-eslint": "^8.67.0",
+    "wxt": "^0.21.4"
   },
   "overrides": {
     "shell-quote": "^1.10.0",

@@ -105,8 +105,8 @@ export class KeeneticClient {
    */
   async rciBatch(operations: unknown[]): Promise<unknown[]> {
     const result = await this.rci<unknown[]>('/', operations);
-    const errors = collectRciErrors(result);
-    if (errors.length > 0) throw new KeeneticApiError(errors[0]);
+    const [firstError] = collectRciErrors(result);
+    if (firstError !== undefined) throw new KeeneticApiError(firstError);
     return result;
   }
 

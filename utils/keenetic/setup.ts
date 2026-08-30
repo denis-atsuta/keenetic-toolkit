@@ -55,7 +55,8 @@ export async function fetchFirmwareVersion(settings: RouterSettings): Promise<st
  * extension is verified against. Unparseable versions pass as supported.
  */
 export function isUnsupportedFirmware(release: string): boolean {
-  const [major, minor] = release.split('.').map(Number);
+  // A missing part defaults to NaN, which the guard below rejects.
+  const [major = NaN, minor = NaN] = release.split('.').map(Number);
   if (!Number.isFinite(major) || !Number.isFinite(minor)) return false;
   return major < 5 || (major === 5 && minor < 1);
 }
