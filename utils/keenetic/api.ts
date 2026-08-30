@@ -1,4 +1,4 @@
-import { KeeneticApiError, type KeeneticClient } from './client';
+import { extract, type KeeneticClient } from './client';
 
 export interface Policy {
   /** Internal id, e.g. "Policy0" */
@@ -56,51 +56,77 @@ type RawHostConfig = Array<{
   conform?: boolean;
 }>;
 
+/** Everything the Devices screen needs, read in one round-trip. */
+export interface DevicesSnapshot {
+  policies: Policy[];
+  hosts: HotspotHost[];
+  states: HostStates;
+}
+
+function toPolicies(raw: RawPolicyMap): Policy[] {
+  return Object.entries(raw).map(([id, v]) => ({ id, description: v?.description || id }));
+}
+
+function toHosts(raw: NonNullable<RawHotspot['host']>): HotspotHost[] {
+  return raw
+    .filter((h): h is typeof h & { mac: string } => Boolean(h.mac))
+    .map((h) => ({
+      mac: h.mac.toLowerCase(),
+      name: h.name || h.hostname || undefined,
+      hostname: h.hostname,
+      // Offline hosts report the placeholder 0.0.0.0 — not a real address.
+      ip: h.ip === '0.0.0.0' ? undefined : h.ip,
+      active: h.active,
+      registered: h.registered,
+    }));
+}
+
+function toHostStates(raw: RawHostConfig): HostStates {
+  const states: HostStates = {};
+  for (const entry of raw) {
+    if (!entry.mac) continue;
+    states[entry.mac.toLowerCase()] = entry.deny
+      ? { kind: 'deny' }
+      : entry.conform
+        ? { kind: 'segment' }
+        : entry.policy
+          ? { kind: 'policy', id: entry.policy }
+          : { kind: 'default' };
+  }
+  return states;
+}
+
 /** Typed wrappers over the RCI endpoints the extension uses. */
 export class KeeneticApi {
   constructor(private readonly client: KeeneticClient) {}
 
-  /** Configured policies. The default/segment/deny states are not in this list. */
-  async getPolicies(): Promise<Policy[]> {
-    const raw = await this.orEmpty<RawPolicyMap>('/ip/policy', {});
-    return Object.entries(raw).map(([id, v]) => ({ id, description: v?.description || id }));
-  }
-
-  /** All hosts the router has seen, active or not. */
-  async getHosts(): Promise<HotspotHost[]> {
-    const raw = await this.client.rci<RawHotspot>('/show/ip/hotspot');
-    return (raw.host ?? [])
-      .filter((h): h is typeof h & { mac: string } => Boolean(h.mac))
-      .map((h) => ({
-        mac: h.mac.toLowerCase(),
-        name: h.name || h.hostname || undefined,
-        hostname: h.hostname,
-        // Offline hosts report the placeholder 0.0.0.0 — not a real address.
-        ip: h.ip === '0.0.0.0' ? undefined : h.ip,
-        active: h.active,
-        registered: h.registered,
-      }));
-  }
-
   /**
-   * Host access states from the running config (`show ip hotspot host`
-   * omitted the policy field on some firmwares, so the config is the
-   * reliable source).
+   * Policies, hosts and their access states in one round-trip. The Devices
+   * screen re-reads this every few seconds, so three separate requests would
+   * be three times the traffic for one answer.
+   *
+   * States come from the running config rather than `show ip hotspot`, which
+   * omitted the policy field on some firmwares. A config section that does not
+   * exist yet — a router with no policies — reads back empty rather than as an
+   * error, so no fallback is needed.
    */
-  async getHostStates(): Promise<HostStates> {
-    const raw = await this.orEmpty<RawHostConfig>('/ip/hotspot/host', []);
-    const states: HostStates = {};
-    for (const entry of raw) {
-      if (!entry.mac) continue;
-      states[entry.mac.toLowerCase()] = entry.deny
-        ? { kind: 'deny' }
-        : entry.conform
-          ? { kind: 'segment' }
-          : entry.policy
-            ? { kind: 'policy', id: entry.policy }
-            : { kind: 'default' };
-    }
-    return states;
+  async getDevices(): Promise<DevicesSnapshot> {
+    const [policyRes, hotspotRes, hostConfigRes] = await this.client.rciBatch([
+      { show: { sc: { ip: { policy: {} } } } },
+      { show: { ip: { hotspot: {} } } },
+      { show: { sc: { ip: { hotspot: { host: {} } } } } },
+    ]);
+    return {
+      policies: toPolicies(
+        (extract(policyRes, ['show', 'sc', 'ip', 'policy']) as RawPolicyMap) ?? {},
+      ),
+      hosts: toHosts(
+        (extract(hotspotRes, ['show', 'ip', 'hotspot', 'host']) as RawHotspot['host']) ?? [],
+      ),
+      states: toHostStates(
+        (extract(hostConfigRes, ['show', 'sc', 'ip', 'hotspot', 'host']) as RawHostConfig) ?? [],
+      ),
+    };
   }
 
   /**
@@ -132,15 +158,5 @@ export class KeeneticApi {
       { known: { host: { mac, name } } },
       { system: { configuration: { save: {} } } },
     ]);
-  }
-
-  /** GETs a config endpoint that may not exist yet (404 → fallback). */
-  private async orEmpty<T>(path: string, fallback: T): Promise<T> {
-    try {
-      return (await this.client.rci<T | null>(path)) ?? fallback;
-    } catch (e) {
-      if (e instanceof KeeneticApiError && e.status === 404) return fallback;
-      throw e;
-    }
   }
 }

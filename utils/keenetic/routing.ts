@@ -1,4 +1,4 @@
-import type { KeeneticClient } from './client';
+import { extract, type KeeneticClient } from './client';
 
 /** The routing rule attached to an address list (0 or 1 per list). */
 export interface RuleInfo {
@@ -315,12 +315,4 @@ export async function setRuleEnabled(
     ...indexes.map((index) => ({ 'dns-proxy': { route: { disable: { index, no: enabled } } } })),
     { system: { configuration: { save: {} } } },
   ]);
-}
-
-function extract(value: unknown, path: string[]): unknown {
-  return path.reduce<unknown>(
-    (acc, key) =>
-      acc && typeof acc === 'object' ? (acc as Record<string, unknown>)[key] : undefined,
-    value,
-  );
 }

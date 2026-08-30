@@ -1,19 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import {
-  KeeneticApi,
-  type HostStates,
-  type HotspotHost,
-  type Policy,
-  type PolicyState,
-} from '@/utils/keenetic/api';
+import { KeeneticApi, type DevicesSnapshot, type PolicyState } from '@/utils/keenetic/api';
 import { KeeneticClient } from '@/utils/keenetic/client';
 import type { RouterSettings } from '@/utils/settings';
 
-export interface DevicesData {
-  policies: Policy[];
-  hosts: HotspotHost[];
-  states: HostStates;
-}
+export type DevicesData = DevicesSnapshot;
 
 // The router answers slowly (~0.5 s plus an auth handshake on a cold
 // session), so the last snapshot is cached per router and shown immediately
@@ -48,10 +38,10 @@ export function useDevices(settings: RouterSettings): UseDevices {
 
   const reload = useCallback(() => {
     const origin = settings.origin;
-    return Promise.all([api.getPolicies(), api.getHosts(), api.getHostStates()])
-      .then(([policies, hosts, states]) => {
+    return api
+      .getDevices()
+      .then((fresh) => {
         if (originRef.current !== origin) return;
-        const fresh = { policies, hosts, states };
         setData(fresh);
         setError(null);
         return devicesCache

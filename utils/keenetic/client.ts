@@ -24,6 +24,15 @@ export interface AuthChallenge {
   challenge: string;
 }
 
+/** Walks a nested RCI answer, yielding undefined as soon as the path breaks. */
+export function extract(value: unknown, path: string[]): unknown {
+  return path.reduce<unknown>(
+    (acc, key) =>
+      acc && typeof acc === 'object' ? (acc as Record<string, unknown>)[key] : undefined,
+    value,
+  );
+}
+
 /** Recursively collects `{"status": "error", "message": ...}` entries. */
 export function collectRciErrors(value: unknown): string[] {
   if (Array.isArray(value)) return value.flatMap(collectRciErrors);
