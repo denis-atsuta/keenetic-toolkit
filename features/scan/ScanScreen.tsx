@@ -18,7 +18,7 @@ import { ScanPicker } from './ScanPicker';
 import './ScanScreen.css';
 
 /** Sentinel for a not-yet-created list (empty id triggers the create flow). */
-const NEW_LIST: AddressList = { id: '', name: '', addresses: [], rule: undefined };
+const NEW_LIST: AddressList = { id: '', name: '', addresses: [], rule: undefined, ruleIndexes: [] };
 
 export function ScanScreen({ settings }: { settings: RouterSettings }) {
   const { lists, interfaces, error, saving, saveDetail, removeList } = useRouting(settings);

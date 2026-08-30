@@ -6,12 +6,13 @@ import { TextField } from '@/components/ui/TextField';
 import { Icon } from '@/components/ui/Icon';
 import { HelpTip } from '@/components/ui/HelpTip';
 import {
+  ANY_INTERFACE,
   parseAddresses,
   type AddressList,
   type ListDetailEdit,
   type NetInterface,
 } from '@/utils/keenetic/routing';
-import { normalizeAddresses } from '@/utils/addresses';
+import { isIpAddress, normalizeAddresses } from '@/utils/addresses';
 import type { ListDraft } from '@/utils/ui-state';
 
 interface ListDetailProps {
@@ -55,22 +56,39 @@ export function ListDetail({
     restored?.addressesText ?? (presetAddresses ?? list.addresses).join('\n'),
   );
   const [routed, setRouted] = useState(restored?.routed ?? rule?.enabled ?? false);
+  // A saved rule carrying a gateway instead of an interface reopens as "Any".
   const [interfaceId, setInterfaceId] = useState(
-    restored?.interfaceId ?? rule?.interfaceId ?? interfaces[0]?.id ?? '',
+    restored?.interfaceId ??
+      (rule?.gateway ? ANY_INTERFACE : rule?.interfaceId || interfaces[0]?.id || ''),
   );
+  const [gateway, setGateway] = useState(restored?.gateway ?? rule?.gateway ?? '');
   const [auto, setAuto] = useState(restored?.auto ?? rule?.auto ?? true);
   const [exclusive, setExclusive] = useState(restored?.exclusive ?? rule?.exclusive ?? false);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
 
   useEffect(() => {
-    onDraftChange?.({ target, name, addressesText, routed, interfaceId, auto, exclusive });
-  }, [onDraftChange, target, name, addressesText, routed, interfaceId, auto, exclusive]);
+    onDraftChange?.({ target, name, addressesText, routed, interfaceId, gateway, auto, exclusive });
+  }, [onDraftChange, target, name, addressesText, routed, interfaceId, gateway, auto, exclusive]);
 
-  const options: SelectOption[] = interfaces.map((i) => ({ value: i.id, label: i.name }));
+  // "Any" mirrors the web UI: no interface, the route follows a gateway address.
+  const options: SelectOption[] = [
+    { value: ANY_INTERFACE, label: 'Any' },
+    ...interfaces.map((i) => ({ value: i.id, label: i.name })),
+  ];
+  const viaGateway = interfaceId === ANY_INTERFACE;
+  const gatewayInvalid = viaGateway && !isIpAddress(gateway.trim());
   const addresses = parseAddresses(addressesText);
 
   async function save() {
-    await onSave(list, { name, addresses, routed, interfaceId, auto, exclusive });
+    await onSave(list, {
+      name,
+      addresses,
+      routed,
+      interfaceId,
+      gateway: gateway.trim(),
+      auto,
+      exclusive,
+    });
     (onSaved ?? onBack)();
   }
 
@@ -147,6 +165,19 @@ export function ListDetail({
                 onChange={setInterfaceId}
               />
             </label>
+            {viaGateway && (
+              <>
+                <TextField
+                  label="Gateway"
+                  value={gateway}
+                  onChange={setGateway}
+                  placeholder="192.168.1.1"
+                />
+                {gateway.trim() !== '' && gatewayInvalid && (
+                  <p className="error">Not a valid IP address</p>
+                )}
+              </>
+            )}
             <div className="field-row field-row--inline">
               <span className="field-row__label">
                 Auto-add
@@ -169,7 +200,10 @@ export function ListDetail({
       </section>
 
       <div className="list-detail__actions">
-        <Button onClick={() => void save()} disabled={busy || (isNew && !name.trim())}>
+        <Button
+          onClick={() => void save()}
+          disabled={busy || (isNew && !name.trim()) || (routed && gatewayInvalid)}
+        >
           {busy ? 'Saving…' : isNew ? 'Create' : 'Save'}
         </Button>
         <Button variant="outline" onClick={onBack} disabled={busy}>

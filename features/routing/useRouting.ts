@@ -25,7 +25,7 @@ export interface UseRouting {
   interfaces: NetInterface[];
   error: string | null;
   saving: ReadonlySet<string>;
-  setEnabled: (listId: string, index: string, enabled: boolean) => Promise<void>;
+  setEnabled: (listId: string, indexes: string[], enabled: boolean) => Promise<void>;
   saveDetail: (original: AddressList, edit: ListDetailEdit) => Promise<void>;
   removeList: (listId: string) => Promise<void>;
 }
@@ -85,9 +85,9 @@ export function useRouting(settings: RouterSettings): UseRouting {
       });
   }
 
-  async function setEnabled(listId: string, index: string, enabled: boolean) {
+  async function setEnabled(listId: string, indexes: string[], enabled: boolean) {
     await withSaving(listId, async () => {
-      await setRuleEnabled(client, index, enabled);
+      await setRuleEnabled(client, indexes, enabled);
       setLists(
         (prev) =>
           prev?.map((l) =>

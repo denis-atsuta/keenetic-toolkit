@@ -130,3 +130,11 @@ export function normalizeAddresses(entries: string[]): string[] {
     })
     .map((i) => i.raw);
 }
+
+/**
+ * True for a bare IP address — no prefix. Used for the gateway of a route
+ * pinned to an address rather than to an interface.
+ */
+export function isIpAddress(value: string): boolean {
+  return !value.includes('/') && parseIp(value) !== null;
+}

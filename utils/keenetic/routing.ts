@@ -6,6 +6,8 @@ export interface RuleInfo {
   index: string;
   interfaceId: string;
   interfaceName: string;
+  /** Set instead of the interface when the route is pinned to a gateway. */
+  gateway: string;
   enabled: boolean;
   /** "Добавлять автоматически" — auto-add resolved addresses. */
   auto: boolean;
@@ -23,6 +25,11 @@ export interface AddressList {
   addresses: string[];
   /** Undefined when the list is not routed anywhere. */
   rule?: RuleInfo;
+  /**
+   * Indexes of every dns-proxy route the router holds for this list. Normally
+   * one; more means earlier edits left rules behind (see `commitListDetail`).
+   */
+  ruleIndexes: string[];
 }
 
 export interface NetInterface {
@@ -30,9 +37,17 @@ export interface NetInterface {
   name: string;
 }
 
+/**
+ * Stands for the web UI's "any interface" choice. It is not an RCI value: such
+ * a route carries a `gateway` address instead of an `interface`, and the
+ * router picks the interface from the gateway's subnet.
+ */
+export const ANY_INTERFACE = '__any__';
+
 interface RawRoute {
   group?: string;
   interface?: string;
+  gateway?: string;
   index?: string;
   auto?: boolean;
   reject?: boolean;
@@ -47,6 +62,8 @@ interface RawFqdnGroup {
 interface RawInterface {
   description?: string;
   'interface-name'?: string;
+  type?: string;
+  traits?: string[];
 }
 
 /** Everything the Routing screen needs, fetched in one round-trip. */
@@ -76,18 +93,26 @@ export async function getRoutingData(client: KeeneticClient): Promise<RoutingDat
   const interfaceName = (id: string) =>
     ifaces[id]?.description || ifaces[id]?.['interface-name'] || id;
 
-  const ruleByGroup = new Map<string, RawRoute>();
-  for (const r of routes) if (r.group) ruleByGroup.set(r.group, r);
+  const routesByGroup = new Map<string, RawRoute[]>();
+  for (const r of routes) {
+    if (!r.group) continue;
+    const existing = routesByGroup.get(r.group);
+    if (existing) existing.push(r);
+    else routesByGroup.set(r.group, [r]);
+  }
 
   const lists = Object.entries(groups)
     .map(([id, g]) => {
-      const r = ruleByGroup.get(id);
+      const groupRoutes = routesByGroup.get(id) ?? [];
+      // The last one wins in the UI, matching what the router applies.
+      const r = groupRoutes[groupRoutes.length - 1];
       const rule: RuleInfo | undefined =
         r && r.index
           ? {
               index: r.index,
               interfaceId: r.interface ?? '',
               interfaceName: r.interface ? interfaceName(r.interface) : '',
+              gateway: r.gateway ?? '',
               enabled: !r.disable,
               auto: Boolean(r.auto),
               exclusive: Boolean(r.reject),
@@ -98,15 +123,46 @@ export async function getRoutingData(client: KeeneticClient): Promise<RoutingDat
         name: g.description || id,
         addresses: (g.include ?? []).map((e) => e.address).filter((a): a is string => Boolean(a)),
         rule,
+        ruleIndexes: groupRoutes.map((x) => x.index).filter((i): i is string => Boolean(i)),
       };
     })
     .sort((a, b) => a.name.localeCompare(b.name));
 
-  const interfaces = Object.entries(ifaces)
-    .map(([id, v]) => ({ id, name: v?.description || v?.['interface-name'] || id }))
+  // `show interface` also returns switch ports and radio masters, which cannot
+  // carry a route. The "Ip" trait is what the router's own web UI filters on,
+  // and reproduces its list exactly.
+  const routable = Object.entries(ifaces).filter(([, v]) => v?.traits?.includes('Ip'));
+  const labelOf = (id: string, v: RawInterface | undefined) =>
+    v?.description || v?.['interface-name'] || id;
+
+  const labelUses = new Map<string, number>();
+  for (const [id, v] of routable) {
+    const label = labelOf(id, v);
+    labelUses.set(label, (labelUses.get(label) ?? 0) + 1);
+  }
+
+  const interfaces = routable
+    .map(([id, v]) => {
+      const label = labelOf(id, v);
+      const type = v?.type;
+      // Several connections share one description ("Broadband connection");
+      // the web UI tells them apart by type, so do the same when a label
+      // is not unique on its own.
+      return { id, name: (labelUses.get(label) ?? 0) > 1 && type ? `${label} (${type})` : label };
+    })
     .sort((a, b) => a.name.localeCompare(b.name));
 
   return { lists, interfaces };
+}
+
+/**
+ * Where a route sends the traffic: an interface, or a gateway address when the
+ * user picked ANY_INTERFACE.
+ */
+function routeTarget(edit: ListDetailEdit) {
+  return edit.interfaceId === ANY_INTERFACE
+    ? { gateway: edit.gateway }
+    : { interface: edit.interfaceId };
 }
 
 /** Next free "domain-listN" id, matching the web UI's naming scheme. */
@@ -135,7 +191,7 @@ export async function createList(
   if (edit.routed) {
     ops.push({
       'dns-proxy': {
-        route: { group: id, interface: edit.interfaceId, auto: edit.auto, reject: edit.exclusive },
+        route: { group: id, ...routeTarget(edit), auto: edit.auto, reject: edit.exclusive },
       },
     });
   }
@@ -148,7 +204,9 @@ export interface ListDetailEdit {
   name: string;
   addresses: string[];
   routed: boolean;
+  /** An interface id, or ANY_INTERFACE to route via `gateway` instead. */
   interfaceId: string;
+  gateway: string;
   auto: boolean;
   exclusive: boolean;
 }
@@ -185,20 +243,34 @@ export async function commitListDetail(
   }
 
   if (edit.routed) {
-    // Create or update the rule (keyed by list); the write yields an enabled rule.
-    ops.push({
-      'dns-proxy': {
-        route: {
-          group: id,
-          interface: edit.interfaceId,
-          auto: edit.auto,
-          reject: edit.exclusive,
+    const unchanged =
+      original.rule?.enabled === true &&
+      original.ruleIndexes.length === 1 &&
+      original.rule.auto === edit.auto &&
+      original.rule.exclusive === edit.exclusive &&
+      (edit.interfaceId === ANY_INTERFACE
+        ? original.rule.gateway === edit.gateway
+        : original.rule.interfaceId === edit.interfaceId);
+    if (!unchanged) {
+      // A route is keyed by a hash of its contents, so writing a changed one
+      // ADDS a rule instead of replacing the old (verified on a live router:
+      // the reply is "added the DNS route"). Drop what the group had first;
+      // that also heals lists an earlier version already duplicated.
+      for (const index of original.ruleIndexes) {
+        ops.push({ 'dns-proxy': { route: { index, no: true } } });
+      }
+      // A fresh write yields an enabled rule.
+      ops.push({
+        'dns-proxy': {
+          route: { group: id, ...routeTarget(edit), auto: edit.auto, reject: edit.exclusive },
         },
-      },
-    });
+      });
+    }
   } else if (original.rule) {
-    // Was routed, now off — disable the rule (keeps it, no:false = disabled).
-    ops.push({ 'dns-proxy': { route: { disable: { index: original.rule.index, no: false } } } });
+    // Was routed, now off — disable the rules (keeps them, no:false = disabled).
+    for (const index of original.ruleIndexes) {
+      ops.push({ 'dns-proxy': { route: { disable: { index, no: false } } } });
+    }
   }
 
   if (ops.length === 0) return;
@@ -231,15 +303,16 @@ export async function deleteList(client: KeeneticClient, listId: string): Promis
   ]);
 }
 
-/** Enables or disables a rule (identified by index) and persists the config. */
+/** Enables or disables a list's rules (by index) and persists the config. */
 export async function setRuleEnabled(
   client: KeeneticClient,
-  index: string,
+  indexes: string[],
   enabled: boolean,
 ): Promise<void> {
+  if (indexes.length === 0) return;
   await client.rciBatch([
     // `no` negates the disable, so no=true means enabled.
-    { 'dns-proxy': { route: { disable: { index, no: enabled } } } },
+    ...indexes.map((index) => ({ 'dns-proxy': { route: { disable: { index, no: enabled } } } })),
     { system: { configuration: { save: {} } } },
   ]);
 }

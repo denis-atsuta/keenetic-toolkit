@@ -15,6 +15,7 @@ export interface ListDraft {
   addressesText: string;
   routed: boolean;
   interfaceId: string;
+  gateway: string;
   auto: boolean;
   exclusive: boolean;
 }

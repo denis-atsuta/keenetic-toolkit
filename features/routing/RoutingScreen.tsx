@@ -15,7 +15,7 @@ import { ListDetail } from './ListDetail';
 import './RoutingScreen.css';
 
 /** Sentinel for a not-yet-created list (empty id triggers the create flow). */
-const NEW_LIST: AddressList = { id: '', name: '', addresses: [], rule: undefined };
+const NEW_LIST: AddressList = { id: '', name: '', addresses: [], rule: undefined, ruleIndexes: [] };
 
 export function RoutingScreen({ settings }: { settings: RouterSettings }) {
   const { lists, interfaces, error, saving, setEnabled, saveDetail, removeList } =
@@ -104,7 +104,9 @@ export function RoutingScreen({ settings }: { settings: RouterSettings }) {
               <button className="rule-open" onClick={() => patchUi({ openListId: list.id })}>
                 <span className="rule-name">{list.name}</span>
                 <span className="rule-iface">
-                  {list.rule ? `via ${list.rule.interfaceName || '—'}` : 'Not routed'}
+                  {list.rule
+                    ? `via ${list.rule.interfaceName || list.rule.gateway || '—'}`
+                    : 'Not routed'}
                   {' · '}
                   {list.addresses.length} addresses
                 </span>
@@ -114,7 +116,7 @@ export function RoutingScreen({ settings }: { settings: RouterSettings }) {
                   checked={list.rule.enabled}
                   disabled={saving.has(list.id)}
                   ariaLabel={`Route ${list.name}`}
-                  onChange={(v) => void setEnabled(list.id, list.rule!.index, v)}
+                  onChange={(v) => void setEnabled(list.id, list.ruleIndexes, v)}
                 />
               )}
             </li>
