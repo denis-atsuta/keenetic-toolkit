@@ -10,6 +10,7 @@ export type IconName =
   | 'star'
   | 'star-filled'
   | 'expand'
+  | 'refresh'
   | 'trash'
   | 'scan'
   | 'eye'
@@ -64,6 +65,12 @@ const PATHS: Record<IconName, ReactNode> = {
     />
   ),
   expand: <path d="M15 3h6v6M10 14 21 3M21 14v5a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5" />,
+  refresh: (
+    <>
+      <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8M21 3v5h-5" />
+      <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16M3 21v-5h5" />
+    </>
+  ),
   trash: (
     <path d="M3 6h18M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2m2 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6M10 11v6M14 11v6" />
   ),

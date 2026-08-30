@@ -4,6 +4,8 @@ import { Icon } from '@/components/ui/Icon';
 import type { RouterSettings } from '@/utils/settings';
 import type { AddressList } from '@/utils/keenetic/routing';
 import { useBackHandler } from '@/utils/nav';
+import { usePolling } from '@/utils/polling';
+import { useRefreshHandler } from '@/utils/refresh';
 import {
   loadRoutingUi,
   saveRoutingUi,
@@ -18,7 +20,7 @@ import './RoutingScreen.css';
 const NEW_LIST: AddressList = { id: '', name: '', addresses: [], rule: undefined, ruleIndexes: [] };
 
 export function RoutingScreen({ settings }: { settings: RouterSettings }) {
-  const { lists, interfaces, error, saving, setEnabled, saveDetail, removeList } =
+  const { lists, interfaces, error, saving, setEnabled, saveDetail, removeList, reload } =
     useRouting(settings);
   // Restored from storage.session so the popup reopens where it was left;
   // every change is written back. Null until the restore completes.
@@ -43,6 +45,12 @@ export function RoutingScreen({ settings }: { settings: RouterSettings }) {
     () => setUi((prev) => prev && { ...prev, openListId: null, creating: false, draft: null }),
     [],
   );
+
+  // The editor holds unsaved input, so nothing is re-fetched under it; the
+  // list refreshes again once it closes.
+  const editorOpen = Boolean(ui && (ui.openListId || ui.creating));
+  usePolling(reload, !editorOpen && saving.size === 0);
+  useRefreshHandler(reload);
 
   // Mouse-back closes an open editor.
   useBackHandler(() => {

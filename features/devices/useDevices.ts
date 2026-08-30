@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   KeeneticApi,
   type HostStates,
@@ -29,6 +29,8 @@ export interface UseDevices {
   saving: ReadonlySet<string>;
   changeState: (mac: string, state: PolicyState) => Promise<void>;
   register: (mac: string) => Promise<void>;
+  /** Re-fetches from the router; drives the poll and the refresh button. */
+  reload: () => Promise<void>;
 }
 
 /** Loads devices, policies and their access states, and applies changes. */
@@ -38,30 +40,43 @@ export function useDevices(settings: RouterSettings): UseDevices {
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState<ReadonlySet<string>>(new Set());
 
+  // Answers that arrive after the user switched routers must not be painted.
+  const originRef = useRef(settings.origin);
+  useEffect(() => {
+    originRef.current = settings.origin;
+  }, [settings.origin]);
+
+  const reload = useCallback(() => {
+    const origin = settings.origin;
+    return Promise.all([api.getPolicies(), api.getHosts(), api.getHostStates()])
+      .then(([policies, hosts, states]) => {
+        if (originRef.current !== origin) return;
+        const fresh = { policies, hosts, states };
+        setData(fresh);
+        setError(null);
+        return devicesCache
+          .getValue()
+          .then((cache) => devicesCache.setValue({ ...cache, [origin]: fresh }));
+      })
+      .catch((e) => {
+        if (originRef.current !== origin) return;
+        setError(e instanceof Error ? e.message : String(e));
+      });
+  }, [api, settings.origin]);
+
   useEffect(() => {
     let cancelled = false;
     // Stale-while-revalidate: paint the cached snapshot instantly (unless the
-    // fresh fetch won the race), then let the fresh data replace it.
+    // fresh fetch won the race), then let reload() replace it.
     void devicesCache.getValue().then((c) => {
       const hit = c[settings.origin];
       if (!cancelled && hit) setData((prev) => prev ?? hit);
     });
-    Promise.all([api.getPolicies(), api.getHosts(), api.getHostStates()])
-      .then(([policies, hosts, states]) => {
-        if (cancelled) return;
-        const fresh = { policies, hosts, states };
-        setData(fresh);
-        void devicesCache
-          .getValue()
-          .then((c) => devicesCache.setValue({ ...c, [settings.origin]: fresh }));
-      })
-      .catch((e) => {
-        if (!cancelled) setError(e instanceof Error ? e.message : String(e));
-      });
+    void reload();
     return () => {
       cancelled = true;
     };
-  }, [api, settings.origin]);
+  }, [reload, settings.origin]);
 
   async function changeState(mac: string, state: PolicyState) {
     setSaving((prev) => new Set(prev).add(mac));
@@ -118,5 +133,5 @@ export function useDevices(settings: RouterSettings): UseDevices {
     }
   }
 
-  return { data, error, saving, changeState, register };
+  return { data, error, saving, changeState, register, reload };
 }

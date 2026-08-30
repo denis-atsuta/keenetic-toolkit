@@ -1,4 +1,6 @@
 import type { RouterSettings } from '@/utils/settings';
+import { usePolling } from '@/utils/polling';
+import { useRefreshHandler } from '@/utils/refresh';
 import { useDevices } from './useDevices';
 import { useFavorites } from './useFavorites';
 import { useDeviceFilter } from './useDeviceFilter';
@@ -10,10 +12,15 @@ import { filterAndSortHosts } from './filter';
 import './DevicesScreen.css';
 
 export function DevicesScreen({ settings }: { settings: RouterSettings }) {
-  const { data, error, saving, changeState, register } = useDevices(settings);
+  const { data, error, saving, changeState, register, reload } = useDevices(settings);
   const { favorites, toggle } = useFavorites(settings.origin);
   const { hidden } = useHiddenPolicies(settings.origin);
   const [filter, setFilter] = useDeviceFilter();
+
+  // A poll landing mid-save would paint the router's pre-change answer over
+  // the row the user just switched, so it waits until nothing is in flight.
+  usePolling(reload, saving.size === 0);
+  useRefreshHandler(reload);
 
   if (error && !data) return <p className="screen-msg error">{error}</p>;
   if (!data) return <p className="screen-msg hint">Loading devices…</p>;

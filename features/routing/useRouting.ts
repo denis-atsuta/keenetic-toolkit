@@ -28,6 +28,8 @@ export interface UseRouting {
   setEnabled: (listId: string, indexes: string[], enabled: boolean) => Promise<void>;
   saveDetail: (original: AddressList, edit: ListDetailEdit) => Promise<void>;
   removeList: (listId: string) => Promise<void>;
+  /** Re-fetches from the router; drives the poll and the refresh button. */
+  reload: () => Promise<void>;
 }
 
 /** Loads address lists with their routing rules, and edits them. */
@@ -117,5 +119,5 @@ export function useRouting(settings: RouterSettings): UseRouting {
     });
   }
 
-  return { lists, interfaces, error, saving, setEnabled, saveDetail, removeList };
+  return { lists, interfaces, error, saving, setEnabled, saveDetail, removeList, reload };
 }

@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Icon } from '../ui/Icon';
 import './Header.css';
 
@@ -6,11 +7,21 @@ interface HeaderProps {
   subtitle?: string;
   /** When set, renders an "open in resizable window" button. */
   onExpand?: () => void;
+  /** When set, renders a button that reloads whatever screen is showing. */
+  onRefresh?: () => Promise<boolean>;
 }
 
 /** Brand bar rendering the router model like the web UI logo. */
-export function Header({ title, subtitle, onExpand }: HeaderProps) {
+export function Header({ title, subtitle, onExpand, onRefresh }: HeaderProps) {
   const [first, ...rest] = title.split(' ');
+  const [refreshing, setRefreshing] = useState(false);
+
+  function refresh() {
+    if (!onRefresh) return;
+    setRefreshing(true);
+    void onRefresh().finally(() => setRefreshing(false));
+  }
+
   return (
     <header className="header">
       <div className="header__left">
@@ -22,6 +33,17 @@ export function Header({ title, subtitle, onExpand }: HeaderProps) {
       </div>
       <div className="header__right">
         {subtitle && <span className="header__subtitle">{subtitle}</span>}
+        {onRefresh && (
+          <button
+            type="button"
+            className="header__action"
+            title="Refresh"
+            disabled={refreshing}
+            onClick={refresh}
+          >
+            <Icon name="refresh" size={16} className={refreshing ? 'spin' : undefined} />
+          </button>
+        )}
         {onExpand && (
           <button
             type="button"

@@ -10,6 +10,7 @@ import { SettingsScreen } from '@/features/settings/SettingsScreen';
 import { ensureOriginStripRule } from '@/utils/keenetic/origin-fix';
 import { loadConnection, type RouterProfile, type RouterSettings } from '@/utils/settings';
 import { dispatchBack } from '@/utils/nav';
+import { dispatchRefresh } from '@/utils/refresh';
 import { loadSection, saveSection, type SectionId } from '@/utils/ui-state';
 import './App.css';
 
@@ -22,6 +23,9 @@ const BOTTOM_ITEMS: RailItem[] = [
   { id: 'settings', icon: 'settings', label: 'Settings' },
   { id: 'account', icon: 'logout', label: 'Account' },
 ];
+
+/** Sections backed by router data, so the header offers a refresh. */
+const REFRESHABLE = new Set<SectionId>(['devices', 'routing']);
 
 const SECTION_TITLES: Record<SectionId, string> = {
   devices: 'Devices',
@@ -150,6 +154,8 @@ function Shell({
         title={settings.realm}
         subtitle={SECTION_TITLES[section]}
         onExpand={IS_WINDOW ? undefined : openInWindow}
+        // Settings and Account hold no router data, so nothing to refresh.
+        onRefresh={REFRESHABLE.has(section) ? dispatchRefresh : undefined}
       />
       <div className="shell__body">
         <Rail
