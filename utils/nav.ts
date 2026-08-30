@@ -15,7 +15,7 @@ const handlers: BackHandler[] = [];
 /** Last registered (deepest screen) handler wins. */
 export function dispatchBack(): boolean {
   for (let i = handlers.length - 1; i >= 0; i--) {
-    if (handlers[i]()) return true;
+    if (handlers[i]?.()) return true;
   }
   return false;
 }
